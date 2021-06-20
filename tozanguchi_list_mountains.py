@@ -103,7 +103,7 @@ if __name__=="__main__":
         print('  "'+theText+'":{')
         for tozanguchi, link in theUrl.items():
           print('    "'+tozanguchi + '":"' +link+'",')
-        print('  }')
+        print('  },')
     print("}")
 
     print('''
