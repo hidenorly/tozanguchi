@@ -18,8 +18,10 @@ import argparse
 import unicodedata
 from bs4 import BeautifulSoup
 import tozanguchiDic
+import mountainInfoDic
 
 tozanguchiDic = tozanguchiDic.getTozanguchiDic()
+mountainInfoDic = mountainInfoDic.getMountainInfoDic()
 
 def getMountainKeys(key):
   result = []
@@ -80,6 +82,38 @@ def showListAndDic(result, indent, startIndent):
       print("    " + ljust_jp(key,indent-startIndent) + " : " + str(value))
   print("")
 
+
+def getMountainDetailInfo(mountainName):
+  result = None
+
+  if( mountainName in mountainInfoDic):
+    result = mountainInfoDic[mountainName]
+  else:
+    pos = mountainName.find("_")
+    if pos != -1:
+      mountainName = mountainName[0 : pos - 1 ]
+    pos = mountainName.find("（")
+    if pos != -1:
+      mountainName = mountainName[0 : pos - 1 ]
+    for aMountainName, anInfo in mountainInfoDic.items():
+      if aMountainName.find( mountainName )!=-1:
+        result = anInfo
+        break
+
+  return result
+
+
+def printMountainDetailInfo(mountainName):
+  info = getMountainDetailInfo( mountainName )
+  if info!=None:
+    print( ljust_jp("  altitude", 20) + " : " + info["altitude"] )
+    print( ljust_jp("  area", 20) + " : " + info["area"] )
+    print( ljust_jp("  difficulty", 20) + " : " + info["difficulty"] )
+    print( ljust_jp("  fitnessLevel", 20) + " : " + info["fitnessLevel"] )
+    print( ljust_jp("  type", 20) + " : " + info["type"] )
+    print( "" )
+
+
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山')
@@ -99,6 +133,7 @@ if __name__=="__main__":
 
   for aMountain in mountainKeys:
     print(aMountain + ":")
+    printMountainDetailInfo( aMountain )
     tozanguchi = tozanguchiDic[aMountain]
     for aTozanguchi, theUrl in tozanguchi.items():
       print( "  " + ljust_jp(aTozanguchi, 18) + " : " + theUrl )
