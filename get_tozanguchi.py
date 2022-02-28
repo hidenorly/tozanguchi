@@ -124,12 +124,12 @@ if __name__=="__main__":
     parser.print_help()
     exit(-1)
 
-  mountainKeys = []
-  mountains = args.args
+  mountainKeys = set()
+  mountains = set( args.args )
   for aMountain in mountains:
     keys = getMountainKeys(aMountain)
     for aMountainKey in keys:
-      mountainKeys.append( aMountainKey )
+      mountainKeys.add( aMountainKey )
 
   for aMountain in mountainKeys:
     print(aMountain + ":")
