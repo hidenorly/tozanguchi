@@ -16,6 +16,11 @@ import sys
 import requests
 import argparse
 import unicodedata
+import csv
+import itertools
+import os
+
+
 from bs4 import BeautifulSoup
 import tozanguchiDic
 import mountainInfoDic
@@ -114,10 +119,55 @@ def printMountainDetailInfo(mountainName):
     print( "" )
 
 
+class MountainFilterUtil:
+  @staticmethod
+  def openCsv( fileName, delimiter="," ):
+    result = []
+    if os.path.exists( fileName ):
+      file = open( fileName )
+      if file:
+        reader = csv.reader(file, quoting=csv.QUOTE_MINIMAL, delimiter=delimiter)
+        for aRow in reader:
+          data = []
+          for aCol in aRow:
+            aCol = aCol.strip()
+            if aCol.startswith("\""):
+              aCol = aCol[1:len(aCol)]
+            if aCol.endswith("\""):
+              aCol = aCol[0:len(aCol)-1]
+            data.append( aCol )
+          result.append( data )
+    return result
+
+  @staticmethod
+  def isMatchedMountainRobust(arrayData, search):
+    result = False
+    for aData in arrayData:
+      if aData.startswith(search) or search.startswith(aData):
+        result = True
+        break
+    return result
+
+
+  @staticmethod
+  def mountainsIncludeExcludeFromFile( mountains, excludeFile, includeFile ):
+    result = set()
+    excludes = set( itertools.chain.from_iterable( MountainFilterUtil.openCsv( excludeFile ) ) )
+    includes = set( itertools.chain.from_iterable( MountainFilterUtil.openCsv( includeFile ) ) )
+    for aMountain in includes:
+      mountains.add( aMountain )
+    for aMountain in mountains:
+      if not MountainFilterUtil.isMatchedMountainRobust( excludes, aMountain ):
+        result.add( aMountain )
+    return result
+
+
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山')
   parser.add_argument('-c', '--compare', action='store_true', help='compare mountains per day')
+  parser.add_argument('-e', '--exclude', action='store', default='', help='specify excluding mountain list file e.g. climbedMountains.lst')
+  parser.add_argument('-i', '--include', action='store', default='', help='specify including mountain list file e.g. climbedMountains.lst')
   args = parser.parse_args()
 
   if len(args.args) == 0:
@@ -126,6 +176,7 @@ if __name__=="__main__":
 
   mountainKeys = set()
   mountains = set( args.args )
+  mountains = MountainFilterUtil.mountainsIncludeExcludeFromFile( mountains, args.exclude, args.include )
   for aMountain in mountains:
     keys = getMountainKeys(aMountain)
     for aMountainKey in keys:
