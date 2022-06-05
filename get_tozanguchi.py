@@ -1,4 +1,4 @@
-#   Copyright 2021 hidenorly
+#   Copyright 2021, 2022 hidenorly
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import unicodedata
 import csv
 import itertools
 import os
-
+import json
 
 from bs4 import BeautifulSoup
 import tozanguchiDic
@@ -55,21 +55,51 @@ def maintainParkInfo(result):
     result["主要登山ルート"] = newRoutes
   return result
 
+
 class TozanguchiCache:
-  CACHE_BASE_DIR = "~/.cache/tozanguchi"
+  CACHE_BASE_DIR = os.path.expanduser("~")+"/.cache/tozanguchi"
 
   @staticmethod
   def ensureCacheStorage():
-    if not os.path.isdir(CACHE_BASE_DIR):
-      os.makedirs(CACHE_BASE_DIR)
+    if not os.path.exists(TozanguchiCache.CACHE_BASE_DIR):
+      os.makedirs(TozanguchiCache.CACHE_BASE_DIR)
+
+  @staticmethod
+  def getCacheFilename(url):
+    result = url
+    pos = str(url).rfind("/")
+    if pos!=-1:
+      result = url[pos+1:len(url)]
+    return result
+
+  @staticmethod
+  def getCachePath(url):
+    return TozanguchiCache.CACHE_BASE_DIR+"/"+TozanguchiCache.getCacheFilename(url)
 
   @staticmethod
   def storeParkInfoAsCache(url, result):
-    return url
+    TozanguchiCache.ensureCacheStorage()
+    cachePath = TozanguchiCache.getCachePath( url )
+
+    with open(cachePath, 'w', encoding='UTF-8') as f:
+      json.dump(result, f, indent = 4, ensure_ascii=False)
+      f.close()
+
+  @staticmethod
+  def restoreParkInfoAsCache(cachePath):
+    result = None
+    with open(cachePath, 'r', encoding='UTF-8') as f:
+      result = json.load(f)
+    return result
 
   @staticmethod
   def getCachedParkInfo(url):
-    return None
+    result = None
+    cachePath = TozanguchiCache.getCachePath( url )
+    if os.path.exists( cachePath ):
+      result = TozanguchiCache.restoreParkInfoAsCache( cachePath )
+
+    return result
 
   @staticmethod
   def getRawParkInfo(url):
@@ -94,7 +124,7 @@ class TozanguchiCache:
     result = TozanguchiCache.getCachedParkInfo( url )
     if result == None:
       result = TozanguchiCache.getRawParkInfo( url )
-      TozanguchiCache.storeParkInfoAsCache( url, result)
+      TozanguchiCache.storeParkInfoAsCache( url, result )
     return result
 
 
