@@ -55,22 +55,54 @@ def maintainParkInfo(result):
     result["主要登山ルート"] = newRoutes
   return result
 
+class TozanguchiCache:
+  CACHE_BASE_DIR = "~/.cache/tozanguchi"
+
+  @staticmethod
+  def ensureCacheStorage():
+    if not os.path.isdir(CACHE_BASE_DIR):
+      os.makedirs(CACHE_BASE_DIR)
+
+  @staticmethod
+  def storeParkInfoAsCache(url, result):
+    return url
+
+  @staticmethod
+  def getCachedParkInfo(url):
+    return None
+
+  @staticmethod
+  def getRawParkInfo(url):
+    result = {}
+    res = requests.get(url)
+    soup = BeautifulSoup(res.text, 'html.parser')
+    if None != soup:
+      dts = soup.find_all("dt")
+      dds = soup.find_all("dd")
+      # i should be starting from 0 and shoud use dts[i], dds[i] and should not require to split
+      i = 1
+      while( i<len(dts) and i<len(dds) ):
+        key = dts[i*2-1].text.strip().split("\n")[0].strip()
+        value = dds[i].text.strip().split("\n")[0].strip()
+        result[key] = value
+        i=i+1
+
+    return result
+
+  @staticmethod
+  def getParkInfo(url):
+    result = TozanguchiCache.getCachedParkInfo( url )
+    if result == None:
+      result = TozanguchiCache.getRawParkInfo( url )
+      TozanguchiCache.storeParkInfoAsCache( url, result)
+    return result
+
+
 def getParkInfo(url):
-  result = {}
-  res = requests.get(url)
-  soup = BeautifulSoup(res.text, 'html.parser')
-  if None != soup:
-    dts = soup.find_all("dt")
-    dds = soup.find_all("dd")
-    # i should be starting from 0 and shoud use dts[i], dds[i] and should not require to split
-    i = 1
-    while( i<len(dts) and i<len(dds) ):
-      key = dts[i*2-1].text.strip().split("\n")[0].strip()
-      value = dds[i].text.strip().split("\n")[0].strip()
-      result[key] = value
-      i=i+1
+  result = TozanguchiCache.getParkInfo(url)
 
   return maintainParkInfo(result)
+
 
 def showListAndDic(result, indent, startIndent):
   for key, value in parkInfo.items():
