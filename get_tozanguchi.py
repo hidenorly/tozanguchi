@@ -26,34 +26,40 @@ import tozanguchiDic
 import mountainInfoDic
 
 tozanguchiDic = tozanguchiDic.getTozanguchiDic()
-mountainInfoDic = mountainInfoDic.getMountainInfoDic()
 
-def getMountainKeys(key):
-  result = []
-  for dicKey, value in tozanguchiDic.items():
-    if dicKey.startswith(key):
-      result.append( dicKey )
-  return result
+class MountainDetailInfo:
+  mountainInfoDic = mountainInfoDic.getMountainInfoDic()
 
-def ljust_jp(value, length, pad = " "):
-  count_length = 0
-  for char in value.encode().decode('utf8'):
-    if ord(char) <= 255:
-      count_length += 1
+  def getMountainDetailInfo(mountainName):
+    result = None
+
+    if( mountainName in MountainDetailInfo.mountainInfoDic):
+      result = MountainDetailInfo.mountainInfoDic[mountainName]
     else:
-      count_length += 2
-  return value + pad * (length-count_length)
+      pos = mountainName.find("_")
+      if pos != -1:
+        mountainName = mountainName[0 : pos - 1 ]
+      pos = mountainName.find("（")
+      if pos != -1:
+        mountainName = mountainName[0 : pos - 1 ]
+      for aMountainName, anInfo in MountainDetailInfo.mountainInfoDic.items():
+        if aMountainName.find( mountainName )!=-1:
+          result = anInfo
+          break
 
-def maintainParkInfo(result):
-  if "主要登山ルート" in result:
-    routes = result["主要登山ルート"].split("）")
-    newRoutes = []
-    for aRoute in routes:
-      aRoute = aRoute.strip()
-      if aRoute:
-        newRoutes.append( aRoute+")" )
-    result["主要登山ルート"] = newRoutes
-  return result
+    return result
+
+
+class StrUtil:
+  @staticmethod
+  def ljust_jp(value, length, pad = " "):
+    count_length = 0
+    for char in value.encode().decode('utf8'):
+      if ord(char) <= 255:
+        count_length += 1
+      else:
+        count_length += 2
+    return value + pad * (length-count_length)
 
 
 class TozanguchiCache:
@@ -128,57 +134,55 @@ class TozanguchiCache:
     return result
 
 
-def getParkInfo(url):
-  result = TozanguchiCache.getParkInfo(url)
 
-  return maintainParkInfo(result)
+class TozanguchiUtil:
+  def getMountainKeys(key):
+    result = []
+    for dicKey, value in tozanguchiDic.items():
+      if dicKey.startswith(key):
+        result.append( dicKey )
+    return result
 
+  def maintainParkInfo(result):
+    if "主要登山ルート" in result:
+      routes = result["主要登山ルート"].split("）")
+      newRoutes = []
+      for aRoute in routes:
+        aRoute = aRoute.strip()
+        if aRoute:
+          newRoutes.append( aRoute+")" )
+      result["主要登山ルート"] = newRoutes
+    return result
 
-def showListAndDic(result, indent, startIndent):
-  for key, value in parkInfo.items():
-    if isinstance(value, list):
-      print(" "*startIndent + ljust_jp(key, indent-startIndent) + " : ", end="")
-      firstLine = True
-      for aValue in value:
-        if firstLine:
-          print( str(aValue) )
-          firstLine = False
-        else:
-          print(" "*(indent+3) + str(aValue) )
-    else:
-      print("    " + ljust_jp(key,indent-startIndent) + " : " + str(value))
-  print("")
+  def getParkInfo(url):
+    result = TozanguchiCache.getParkInfo(url)
 
+    return TozanguchiUtil.maintainParkInfo(result)
 
-def getMountainDetailInfo(mountainName):
-  result = None
+  def showListAndDic(result, indent, startIndent):
+    for key, value in parkInfo.items():
+      if isinstance(value, list):
+        print(" "*startIndent + StrUtil.ljust_jp(key, indent-startIndent) + " : ", end="")
+        firstLine = True
+        for aValue in value:
+          if firstLine:
+            print( str(aValue) )
+            firstLine = False
+          else:
+            print(" "*(indent+3) + str(aValue) )
+      else:
+        print("    " + StrUtil.ljust_jp(key,indent-startIndent) + " : " + str(value))
+    print("")
 
-  if( mountainName in mountainInfoDic):
-    result = mountainInfoDic[mountainName]
-  else:
-    pos = mountainName.find("_")
-    if pos != -1:
-      mountainName = mountainName[0 : pos - 1 ]
-    pos = mountainName.find("（")
-    if pos != -1:
-      mountainName = mountainName[0 : pos - 1 ]
-    for aMountainName, anInfo in mountainInfoDic.items():
-      if aMountainName.find( mountainName )!=-1:
-        result = anInfo
-        break
-
-  return result
-
-
-def printMountainDetailInfo(mountainName):
-  info = getMountainDetailInfo( mountainName )
-  if info!=None:
-    print( ljust_jp("  altitude", 20) + " : " + info["altitude"] )
-    print( ljust_jp("  area", 20) + " : " + info["area"] )
-    print( ljust_jp("  difficulty", 20) + " : " + info["difficulty"] )
-    print( ljust_jp("  fitnessLevel", 20) + " : " + info["fitnessLevel"] )
-    print( ljust_jp("  type", 20) + " : " + info["type"] )
-    print( "" )
+  def printMountainDetailInfo(mountainName):
+    info = MountainDetailInfo.getMountainDetailInfo( mountainName )
+    if info!=None:
+      print( StrUtil.ljust_jp("  altitude", 20) + " : " + info["altitude"] )
+      print( StrUtil.ljust_jp("  area", 20) + " : " + info["area"] )
+      print( StrUtil.ljust_jp("  difficulty", 20) + " : " + info["difficulty"] )
+      print( StrUtil.ljust_jp("  fitnessLevel", 20) + " : " + info["fitnessLevel"] )
+      print( StrUtil.ljust_jp("  type", 20) + " : " + info["type"] )
+      print( "" )
 
 
 class MountainFilterUtil:
@@ -227,7 +231,7 @@ class MountainFilterUtil:
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山')
-  parser.add_argument('-c', '--compare', action='store_true', help='compare mountains per day')
+  parser.add_argument('-c', '--compare', action='store_true', default=False, help='compare tozanguchi per climbtime')
   parser.add_argument('-e', '--exclude', action='store', default='', help='specify excluding mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-i', '--include', action='store', default='', help='specify including mountain list file e.g. climbedMountains.lst')
   args = parser.parse_args()
@@ -240,15 +244,15 @@ if __name__=="__main__":
   mountains = set( args.args )
   mountains = MountainFilterUtil.mountainsIncludeExcludeFromFile( mountains, args.exclude, args.include )
   for aMountain in mountains:
-    keys = getMountainKeys(aMountain)
+    keys = TozanguchiUtil.getMountainKeys(aMountain)
     for aMountainKey in keys:
       mountainKeys.add( aMountainKey )
 
   for aMountain in mountainKeys:
     print(aMountain + ":")
-    printMountainDetailInfo( aMountain )
+    TozanguchiUtil.printMountainDetailInfo( aMountain )
     tozanguchi = tozanguchiDic[aMountain]
     for aTozanguchi, theUrl in tozanguchi.items():
-      print( "  " + ljust_jp(aTozanguchi, 18) + " : " + theUrl )
-      parkInfo = getParkInfo(theUrl)
-      showListAndDic(parkInfo, 20, 4)
+      print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
+      parkInfo = TozanguchiUtil.getParkInfo(theUrl)
+      TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
