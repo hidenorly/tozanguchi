@@ -126,9 +126,9 @@ class TozanguchiCache:
     return result
 
   @staticmethod
-  def getParkInfo(url):
+  def getParkInfo(url, forceReload = False):
     result = TozanguchiCache.getCachedParkInfo( url )
-    if result == None:
+    if result == None or forceReload:
       result = TozanguchiCache.getRawParkInfo( url )
       TozanguchiCache.storeParkInfoAsCache( url, result )
     return result
@@ -154,8 +154,8 @@ class TozanguchiUtil:
       result["主要登山ルート"] = newRoutes
     return result
 
-  def getParkInfo(url):
-    result = TozanguchiCache.getParkInfo(url)
+  def getParkInfo(url, forceReload = False):
+    result = TozanguchiCache.getParkInfo(url, forceReload)
 
     return TozanguchiUtil.maintainParkInfo(result)
 
@@ -232,6 +232,7 @@ if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山')
   parser.add_argument('-c', '--compare', action='store_true', default=False, help='compare tozanguchi per climbtime')
+  parser.add_argument('-r', '--renew', action='store_true', default=False, help='get latest data although cache exists')
   parser.add_argument('-e', '--exclude', action='store', default='', help='specify excluding mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-i', '--include', action='store', default='', help='specify including mountain list file e.g. climbedMountains.lst')
   args = parser.parse_args()
@@ -254,5 +255,5 @@ if __name__=="__main__":
     tozanguchi = tozanguchiDic[aMountain]
     for aTozanguchi, theUrl in tozanguchi.items():
       print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
-      parkInfo = TozanguchiUtil.getParkInfo(theUrl)
+      parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew)
       TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
