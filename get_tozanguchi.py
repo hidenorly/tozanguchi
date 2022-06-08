@@ -251,9 +251,30 @@ if __name__=="__main__":
 
   for aMountain in mountainKeys:
     print(aMountain + ":")
-    TozanguchiUtil.printMountainDetailInfo( aMountain )
+    if not args.compare:
+      TozanguchiUtil.printMountainDetailInfo( aMountain )
     tozanguchi = tozanguchiDic[aMountain]
     for aTozanguchi, theUrl in tozanguchi.items():
-      print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
       parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew)
-      TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
+      if not args.compare:
+        # normal tozanguchi dump mode
+        print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
+        TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
+      else:
+        # tozanguchi compare dump mode
+        if "主要登山ルート" in parkInfo:
+          climbTimes = parkInfo["主要登山ルート"]
+          for aClimbTime in climbTimes:
+            _theMountain = aMountain
+            pos = _theMountain.find("_")
+            if pos!=-1:
+              _theMountain = _theMountain[0:pos-1]
+
+            _mountains = _theMountain.split("・")
+            for _aMountain in _mountains:
+              pos = aClimbTime.find(_aMountain)
+              if pos!=-1:
+                print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + aClimbTime )
+                break;
+  
+
