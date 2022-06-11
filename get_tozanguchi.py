@@ -262,6 +262,9 @@ if __name__=="__main__":
         TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
       else:
         # tozanguchi compare dump mode
+        theNumOfCarInPark = ""
+        if "駐車台数" in parkInfo:
+          theNumOfCarInPark = " ("+parkInfo["駐車台数"]+")"
         if "主要登山ルート" in parkInfo:
           climbTimes = parkInfo["主要登山ルート"]
           for aClimbTime in climbTimes:
@@ -274,7 +277,7 @@ if __name__=="__main__":
             for _aMountain in _mountains:
               pos = aClimbTime.find(_aMountain)
               if pos!=-1:
-                print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + aClimbTime )
+                print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + aClimbTime + theNumOfCarInPark )
                 break;
   
 
