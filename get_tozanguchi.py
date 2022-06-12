@@ -20,6 +20,7 @@ import csv
 import itertools
 import os
 import json
+import datetime
 
 from bs4 import BeautifulSoup
 import tozanguchiDic
@@ -64,6 +65,7 @@ class StrUtil:
 
 class TozanguchiCache:
   CACHE_BASE_DIR = os.path.expanduser("~")+"/.cache/tozanguchi"
+  CACHE_EXPIRE_HOURS = 24*30 # approx. 1 month
 
   @staticmethod
   def ensureCacheStorage():
@@ -86,16 +88,28 @@ class TozanguchiCache:
   def storeParkInfoAsCache(url, result):
     TozanguchiCache.ensureCacheStorage()
     cachePath = TozanguchiCache.getCachePath( url )
+    dt_now = datetime.datetime.now()
+    result["lastUpdate"] = dt_now.strftime("%Y-%m-%d %H:%M:%S")
 
     with open(cachePath, 'w', encoding='UTF-8') as f:
       json.dump(result, f, indent = 4, ensure_ascii=False)
       f.close()
 
+    del result["lastUpdate"]
+
   @staticmethod
   def restoreParkInfoAsCache(cachePath):
     result = None
     with open(cachePath, 'r', encoding='UTF-8') as f:
-      result = json.load(f)
+      _result = json.load(f)
+
+    if "lastUpdate" in _result:
+      lastUpdate = datetime.datetime.strptime(_result["lastUpdate"], "%Y-%m-%d %H:%M:%S")
+      dt_now = datetime.datetime.now()
+      if dt_now < ( lastUpdate+datetime.timedelta(hours=TozanguchiCache.CACHE_EXPIRE_HOURS) ):
+        del _result["lastUpdate"]
+        result = _result
+
     return result
 
   @staticmethod
