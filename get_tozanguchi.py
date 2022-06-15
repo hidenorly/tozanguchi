@@ -98,15 +98,23 @@ class TozanguchiCache:
     del result["lastUpdate"]
 
   @staticmethod
+  def isValidCache( lastUpdateString ):
+    result = False
+    lastUpdate = datetime.datetime.strptime(lastUpdateString, "%Y-%m-%d %H:%M:%S")
+    dt_now = datetime.datetime.now()
+    if dt_now < ( lastUpdate+datetime.timedelta(hours=TozanguchiCache.CACHE_EXPIRE_HOURS) ):
+      result = True
+
+    return result
+
+  @staticmethod
   def restoreParkInfoAsCache(cachePath):
     result = None
     with open(cachePath, 'r', encoding='UTF-8') as f:
       _result = json.load(f)
 
     if "lastUpdate" in _result:
-      lastUpdate = datetime.datetime.strptime(_result["lastUpdate"], "%Y-%m-%d %H:%M:%S")
-      dt_now = datetime.datetime.now()
-      if dt_now < ( lastUpdate+datetime.timedelta(hours=TozanguchiCache.CACHE_EXPIRE_HOURS) ):
+      if TozanguchiCache.isValidCache( _result["lastUpdate"] ):
         del _result["lastUpdate"]
         result = _result
 
