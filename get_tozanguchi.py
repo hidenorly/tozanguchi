@@ -207,6 +207,72 @@ class TozanguchiUtil:
       print( "" )
 
 
+  def getClimbTimeMinutes(mountainName, parkInfo):
+    result = 0
+
+    pos = mountainName.find("_")
+    if pos!=-1:
+      mountainName = mountainName[0:pos-1]
+    _mountains = mountainName.split("・")
+
+    if "主要登山ルート" in parkInfo:
+      climbTimes = parkInfo["主要登山ルート"]
+      for aClimbTime in climbTimes:
+        for _aMountain in _mountains:
+          pos = aClimbTime.find(_aMountain)
+          if pos!=-1:
+            pos = aClimbTime.find("往復所要時間：")
+            if pos!=-1:
+              pos2 = aClimbTime.find("分)", pos)
+              if pos2!=-1:
+                result = aClimbTime[pos+7:pos2]
+                pos = result.find("時間")
+                if pos!=-1:
+                  result = int(result[0:pos])*60+int(result[pos+2:len(result)])
+                else:
+                  result = int(result)
+            break;
+
+    return result
+
+  def getMinutesFromHHMM(timeHHMM):
+    result = 0
+
+    if timeHHMM!="":
+      pos = str(timeHHMM).find(":")
+      if pos!=-1:
+        result = int( timeHHMM[0:pos] ) * 60 + int( timeHHMM[pos+1:len(timeHHMM)] )
+      else:
+        result = int( timeHHMM )
+
+    return result
+
+  def isAcceptableTozanguchi(mountainName, parkInfo, maxClimbTimeMinutes):
+    result = True
+    if maxClimbTimeMinutes:
+      climbTimeMinutes = TozanguchiUtil.getClimbTimeMinutes(mountainName, parkInfo)
+      if climbTimeMinutes > maxClimbTimeMinutes:
+        result = False
+    return result
+
+  def showParkAndRoute(mountainName, parkInfo):
+    pos = mountainName.find("_")
+    if pos!=-1:
+      mountainName = mountainName[0:pos-1]
+    _mountains = mountainName.split("・")
+
+    theNumOfCarInPark = ""
+    if "駐車台数" in parkInfo:
+      theNumOfCarInPark = " ("+parkInfo["駐車台数"]+")"
+    if "主要登山ルート" in parkInfo:
+      climbTimes = parkInfo["主要登山ルート"]
+      for aClimbTime in climbTimes:
+        for _aMountain in _mountains:
+          pos = aClimbTime.find(_aMountain)
+          if pos!=-1:
+            print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + aClimbTime + theNumOfCarInPark )
+            break;
+
 class MountainFilterUtil:
   @staticmethod
   def openCsv( fileName, delimiter="," ):
@@ -255,6 +321,7 @@ if __name__=="__main__":
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山')
   parser.add_argument('-c', '--compare', action='store_true', default=False, help='compare tozanguchi per climbtime')
   parser.add_argument('-r', '--renew', action='store_true', default=False, help='get latest data although cache exists')
+  parser.add_argument('-t', '--maxTime', action='store', default='', help='specify max climb time e.g. 5:00')
   parser.add_argument('-e', '--exclude', action='store', default='', help='specify excluding mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-i', '--include', action='store', default='', help='specify including mountain list file e.g. climbedMountains.lst')
   args = parser.parse_args()
@@ -271,6 +338,8 @@ if __name__=="__main__":
     for aMountainKey in keys:
       mountainKeys.add( aMountainKey )
 
+  maxClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxTime)
+
   for aMountain in mountainKeys:
     print(aMountain + ":")
     if not args.compare:
@@ -278,28 +347,11 @@ if __name__=="__main__":
     tozanguchi = tozanguchiDic[aMountain]
     for aTozanguchi, theUrl in tozanguchi.items():
       parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew)
-      if not args.compare:
-        # normal tozanguchi dump mode
-        print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
-        TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
-      else:
-        # tozanguchi compare dump mode
-        theNumOfCarInPark = ""
-        if "駐車台数" in parkInfo:
-          theNumOfCarInPark = " ("+parkInfo["駐車台数"]+")"
-        if "主要登山ルート" in parkInfo:
-          climbTimes = parkInfo["主要登山ルート"]
-          for aClimbTime in climbTimes:
-            _theMountain = aMountain
-            pos = _theMountain.find("_")
-            if pos!=-1:
-              _theMountain = _theMountain[0:pos-1]
-
-            _mountains = _theMountain.split("・")
-            for _aMountain in _mountains:
-              pos = aClimbTime.find(_aMountain)
-              if pos!=-1:
-                print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + aClimbTime + theNumOfCarInPark )
-                break;
-  
-
+      if TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, maxClimbTimeMinutes ):
+        if not args.compare:
+          # normal tozanguchi dump mode
+          print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
+          TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
+        else:
+          # tozanguchi compare dump mode
+          TozanguchiUtil.showParkAndRoute( aMountain, parkInfo )
