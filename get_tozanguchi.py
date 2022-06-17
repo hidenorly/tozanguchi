@@ -65,7 +65,7 @@ class StrUtil:
 
 class TozanguchiCache:
   CACHE_BASE_DIR = os.path.expanduser("~")+"/.cache/tozanguchi"
-  CACHE_EXPIRE_HOURS = 24*30 # approx. 1 month
+  CACHE_EXPIRE_HOURS = 24*365 # approx. 1 year
 
   @staticmethod
   def ensureCacheStorage():
@@ -324,6 +324,8 @@ if __name__=="__main__":
   parser.add_argument('-t', '--maxTime', action='store', default='', help='specify max climb time e.g. 5:00')
   parser.add_argument('-e', '--exclude', action='store', default='', help='specify excluding mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-i', '--include', action='store', default='', help='specify including mountain list file e.g. climbedMountains.lst')
+  parser.add_argument('-nn', '--mountainNameOnly', action='store_true', default=False, help='specify if you want to output mountain name only')
+  parser.add_argument('-on', '--outputNotFound', action='store_true', default=False, help='specify if you want to output not found mountain too. For -nn')
   args = parser.parse_args()
 
   if len(args.args) == 0:
@@ -340,18 +342,32 @@ if __name__=="__main__":
 
   maxClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxTime)
 
+  mountainNames = set()
   for aMountain in mountainKeys:
-    print(aMountain + ":")
-    if not args.compare:
-      TozanguchiUtil.printMountainDetailInfo( aMountain )
+    if not args.mountainNameOnly:
+      print(aMountain + ":")
+      if not args.compare:
+        TozanguchiUtil.printMountainDetailInfo( aMountain )
     tozanguchi = tozanguchiDic[aMountain]
     for aTozanguchi, theUrl in tozanguchi.items():
       parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew)
       if TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, maxClimbTimeMinutes ):
-        if not args.compare:
-          # normal tozanguchi dump mode
-          print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
-          TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
-        else:
-          # tozanguchi compare dump mode
-          TozanguchiUtil.showParkAndRoute( aMountain, parkInfo )
+        mountainNames = mountainNames.union( set( aMountain.split("・") ) )
+        if not args.mountainNameOnly:
+          if not args.compare:
+            # normal tozanguchi dump mode
+            print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
+            TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
+          else:
+            # tozanguchi compare dump mode
+            TozanguchiUtil.showParkAndRoute( aMountain, parkInfo )
+
+  if args.mountainNameOnly:
+    mountains = mountainNames
+    if args.outputNotFound:
+      mountains = mountains.union( set( set(args.args) - mountainKeys) )
+    for aMountain in mountains:
+      print( aMountain + " ", end="" )
+    print( "" )
+
+
