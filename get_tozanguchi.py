@@ -326,6 +326,8 @@ if __name__=="__main__":
   parser.add_argument('-i', '--include', action='store', default='', help='specify including mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-nn', '--mountainNameOnly', action='store_true', default=False, help='specify if you want to output mountain name only')
   parser.add_argument('-on', '--outputNotFound', action='store_true', default=False, help='specify if you want to output not found mountain too. For -nn')
+  parser.add_argument('-s', '--sortReverse', action='store_true', default=False, help='specify if you want to output as reverse sort order')
+
   args = parser.parse_args()
 
   if len(args.args) == 0:
@@ -348,19 +350,26 @@ if __name__=="__main__":
       print(aMountain + ":")
       if not args.compare:
         TozanguchiUtil.printMountainDetailInfo( aMountain )
+
     tozanguchi = tozanguchiDic[aMountain]
+    result = {}
     for aTozanguchi, theUrl in tozanguchi.items():
       parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew)
       if TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, maxClimbTimeMinutes ):
-        mountainNames = mountainNames.union( set( aMountain.split("・") ) )
-        if not args.mountainNameOnly:
-          if not args.compare:
-            # normal tozanguchi dump mode
-            print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
-            TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
-          else:
-            # tozanguchi compare dump mode
-            TozanguchiUtil.showParkAndRoute( aMountain, parkInfo )
+        result [ aTozanguchi ] = parkInfo
+
+    result = dict( sorted( result.items(), reverse=args.sortReverse, key=lambda _data: ( TozanguchiUtil.getClimbTimeMinutes(aMountain, _data[0]), TozanguchiUtil.getClimbTimeMinutes(aMountain, _data[1]) ) ) )
+
+    for aTozanguchi, parkInfo in result.items():
+      mountainNames = mountainNames.union( set( aMountain.split("・") ) )
+      if not args.mountainNameOnly:
+        if not args.compare:
+          # normal tozanguchi dump mode
+          print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
+          TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
+        else:
+          # tozanguchi compare dump mode
+          TozanguchiUtil.showParkAndRoute( aMountain, parkInfo )
 
   if args.mountainNameOnly:
     mountains = mountainNames
@@ -369,5 +378,3 @@ if __name__=="__main__":
     for aMountain in mountains:
       print( aMountain + " ", end="" )
     print( "" )
-
-
