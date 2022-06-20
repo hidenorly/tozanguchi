@@ -247,12 +247,25 @@ class TozanguchiUtil:
 
     return result
 
-  def isAcceptableTozanguchi(mountainName, parkInfo, maxClimbTimeMinutes):
+  def getTheNumberOfCarPark(parkInfo):
+    result = 0
+    if "駐車台数" in parkInfo:
+      parks = parkInfo["駐車台数"]
+      pos = parks.find("台")
+      if pos!=-1:
+        parks = parks[0:pos]
+      result = int( parks )
+
+    return result
+
+  def isAcceptableTozanguchi(mountainName, parkInfo, maxClimbTimeMinutes, minPark):
     result = True
+
     if maxClimbTimeMinutes:
       climbTimeMinutes = TozanguchiUtil.getClimbTimeMinutes(mountainName, parkInfo)
-      if climbTimeMinutes > maxClimbTimeMinutes:
+      if climbTimeMinutes > maxClimbTimeMinutes or TozanguchiUtil.getTheNumberOfCarPark(parkInfo) < int(minPark):
         result = False
+
     return result
 
   def showParkAndRoute(mountainName, parkInfo):
@@ -327,6 +340,7 @@ if __name__=="__main__":
   parser.add_argument('-nn', '--mountainNameOnly', action='store_true', default=False, help='specify if you want to output mountain name only')
   parser.add_argument('-on', '--outputNotFound', action='store_true', default=False, help='specify if you want to output not found mountain too. For -nn')
   parser.add_argument('-s', '--sortReverse', action='store_true', default=False, help='specify if you want to output as reverse sort order')
+  parser.add_argument('-p', '--minPark', action='store', default=0, help='specify the number of minimum car parking e.g. 0')
 
   args = parser.parse_args()
 
@@ -355,7 +369,7 @@ if __name__=="__main__":
     result = {}
     for aTozanguchi, theUrl in tozanguchi.items():
       parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew)
-      if TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, maxClimbTimeMinutes ):
+      if TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, maxClimbTimeMinutes, args.minPark ):
         result [ aTozanguchi ] = parkInfo
 
     result = dict( sorted( result.items(), reverse=args.sortReverse, key=lambda _data: ( TozanguchiUtil.getClimbTimeMinutes(aMountain, _data[0]), TozanguchiUtil.getClimbTimeMinutes(aMountain, _data[1]) ) ) )
