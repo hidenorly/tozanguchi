@@ -148,9 +148,9 @@ class TozanguchiCache:
     return result
 
   @staticmethod
-  def getParkInfo(url, forceReload = False):
+  def getParkInfo(url, forceReload = False, noneIfCacheMiss = False):
     result = TozanguchiCache.getCachedParkInfo( url )
-    if result == None or forceReload:
+    if (result == None or forceReload) and (noneIfCacheMiss == False):
       result = TozanguchiCache.getRawParkInfo( url )
       TozanguchiCache.storeParkInfoAsCache( url, result )
     return result
@@ -158,6 +158,7 @@ class TozanguchiCache:
 
 
 class TozanguchiUtil:
+  @staticmethod
   def getMountainKeys(key):
     result = []
     for dicKey, value in tozanguchiDic.items():
@@ -165,8 +166,9 @@ class TozanguchiUtil:
         result.append( dicKey )
     return result
 
+  @staticmethod
   def maintainParkInfo(result):
-    if "主要登山ルート" in result:
+    if result!=None and "主要登山ルート" in result:
       routes = result["主要登山ルート"].split("）")
       newRoutes = []
       for aRoute in routes:
@@ -176,11 +178,13 @@ class TozanguchiUtil:
       result["主要登山ルート"] = newRoutes
     return result
 
-  def getParkInfo(url, forceReload = False):
-    result = TozanguchiCache.getParkInfo(url, forceReload)
+  @staticmethod
+  def getParkInfo(url, forceReload = False, noneIfCacheMiss = False):
+    result = TozanguchiCache.getParkInfo(url, forceReload, noneIfCacheMiss)
 
     return TozanguchiUtil.maintainParkInfo(result)
 
+  @staticmethod
   def showListAndDic(result, indent, startIndent):
     for key, value in parkInfo.items():
       if isinstance(value, list):
@@ -196,6 +200,7 @@ class TozanguchiUtil:
         print("    " + StrUtil.ljust_jp(key,indent-startIndent) + " : " + str(value))
     print("")
 
+  @staticmethod
   def printMountainDetailInfo(mountainName):
     info = MountainDetailInfo.getMountainDetailInfo( mountainName )
     if info!=None:
@@ -207,6 +212,7 @@ class TozanguchiUtil:
       print( "" )
 
 
+  @staticmethod
   def getClimbTimeMinutes(mountainName, parkInfo):
     result = 0
 
@@ -235,6 +241,7 @@ class TozanguchiUtil:
 
     return result
 
+  @staticmethod
   def getMinutesFromHHMM(timeHHMM):
     result = 0
 
@@ -247,6 +254,7 @@ class TozanguchiUtil:
 
     return result
 
+  @staticmethod
   def getTheNumberOfCarPark(parkInfo):
     result = 0
     if "駐車台数" in parkInfo:
@@ -258,16 +266,17 @@ class TozanguchiUtil:
 
     return result
 
+  @staticmethod
   def isAcceptableTozanguchi(mountainName, parkInfo, maxClimbTimeMinutes, minPark):
     result = True
 
-    if maxClimbTimeMinutes:
-      climbTimeMinutes = TozanguchiUtil.getClimbTimeMinutes(mountainName, parkInfo)
-      if climbTimeMinutes > maxClimbTimeMinutes or TozanguchiUtil.getTheNumberOfCarPark(parkInfo) < int(minPark):
-        result = False
+    climbTimeMinutes = TozanguchiUtil.getClimbTimeMinutes(mountainName, parkInfo)
+    if ( maxClimbTimeMinutes and climbTimeMinutes > maxClimbTimeMinutes ) or TozanguchiUtil.getTheNumberOfCarPark(parkInfo) < int(minPark):
+      result = False
 
     return result
 
+  @staticmethod
   def showParkAndRoute(mountainName, parkInfo):
     pos = mountainName.find("_")
     if pos!=-1:
@@ -341,15 +350,20 @@ if __name__=="__main__":
   parser.add_argument('-on', '--outputNotFound', action='store_true', default=False, help='specify if you want to output not found mountain too. For -nn')
   parser.add_argument('-s', '--sortReverse', action='store_true', default=False, help='specify if you want to output as reverse sort order')
   parser.add_argument('-p', '--minPark', action='store', default=0, help='specify the number of minimum car parking e.g. 0')
+  parser.add_argument('-l', '--listAllCache', action='store_true', default=False, help='specify if you want to list up cached park')
 
   args = parser.parse_args()
 
-  if len(args.args) == 0:
+  if len(args.args) == 0 and not args.listAllCache:
     parser.print_help()
     exit(-1)
 
   mountainKeys = set()
-  mountains = set( args.args )
+  mountains = set()
+  if args.listAllCache:
+    mountains = set( tozanguchiDic.keys() )
+  else:
+    mountains = set( args.args )
   mountains = MountainFilterUtil.mountainsIncludeExcludeFromFile( mountains, args.exclude, args.include )
   for aMountain in mountains:
     keys = TozanguchiUtil.getMountainKeys(aMountain)
@@ -360,17 +374,18 @@ if __name__=="__main__":
 
   mountainNames = set()
   for aMountain in mountainKeys:
-    if not args.mountainNameOnly:
+    tozanguchi = tozanguchiDic[aMountain]
+    result = {}
+    for aTozanguchi, theUrl in tozanguchi.items():
+      parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew, args.listAllCache)
+      if parkInfo != None and TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, maxClimbTimeMinutes, args.minPark ):
+        result [ aTozanguchi ] = parkInfo
+
+    if not args.mountainNameOnly and len(result)!=0:
       print(aMountain + ":")
       if not args.compare:
         TozanguchiUtil.printMountainDetailInfo( aMountain )
 
-    tozanguchi = tozanguchiDic[aMountain]
-    result = {}
-    for aTozanguchi, theUrl in tozanguchi.items():
-      parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew)
-      if TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, maxClimbTimeMinutes, args.minPark ):
-        result [ aTozanguchi ] = parkInfo
 
     result = dict( sorted( result.items(), reverse=args.sortReverse, key=lambda _data: ( TozanguchiUtil.getClimbTimeMinutes(aMountain, _data[0]), TozanguchiUtil.getClimbTimeMinutes(aMountain, _data[1]) ) ) )
 
