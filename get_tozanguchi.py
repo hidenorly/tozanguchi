@@ -351,6 +351,7 @@ if __name__=="__main__":
   parser.add_argument('-s', '--sortReverse', action='store_true', default=False, help='specify if you want to output as reverse sort order')
   parser.add_argument('-p', '--minPark', action='store', default=0, help='specify the number of minimum car parking e.g. 0')
   parser.add_argument('-l', '--listAllCache', action='store_true', default=False, help='specify if you want to list up cached park')
+  parser.add_argument('-nd', '--noDetails', action='store_true', default=False, help='specify if you want to disable to output the mountain info.')
 
   args = parser.parse_args()
 
@@ -383,7 +384,7 @@ if __name__=="__main__":
 
     if not args.mountainNameOnly and len(result)!=0:
       print(aMountain + ":")
-      if not args.compare:
+      if not args.compare and not args.noDetails:
         TozanguchiUtil.printMountainDetailInfo( aMountain )
 
 
