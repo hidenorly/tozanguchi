@@ -267,11 +267,11 @@ class TozanguchiUtil:
     return result
 
   @staticmethod
-  def isAcceptableTozanguchi(mountainName, parkInfo, maxClimbTimeMinutes, minPark):
+  def isAcceptableTozanguchi(mountainName, parkInfo, minClimbTimeMinutes, maxClimbTimeMinutes, minPark):
     result = True
 
     climbTimeMinutes = TozanguchiUtil.getClimbTimeMinutes(mountainName, parkInfo)
-    if ( maxClimbTimeMinutes and climbTimeMinutes > maxClimbTimeMinutes ) or TozanguchiUtil.getTheNumberOfCarPark(parkInfo) < int(minPark):
+    if ( maxClimbTimeMinutes and climbTimeMinutes > maxClimbTimeMinutes ) or ( minClimbTimeMinutes and climbTimeMinutes < minClimbTimeMinutes ) or TozanguchiUtil.getTheNumberOfCarPark(parkInfo) < int(minPark):
       result = False
 
     return result
@@ -344,6 +344,7 @@ if __name__=="__main__":
   parser.add_argument('-c', '--compare', action='store_true', default=False, help='compare tozanguchi per climbtime')
   parser.add_argument('-r', '--renew', action='store_true', default=False, help='get latest data although cache exists')
   parser.add_argument('-t', '--maxTime', action='store', default='', help='specify max climb time e.g. 5:00')
+  parser.add_argument('-b', '--minTime', action='store', default='', help='specify min climb time e.g. 4:30')
   parser.add_argument('-e', '--exclude', action='store', default='', help='specify excluding mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-i', '--include', action='store', default='', help='specify including mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-nn', '--mountainNameOnly', action='store_true', default=False, help='specify if you want to output mountain name only')
@@ -371,6 +372,7 @@ if __name__=="__main__":
     for aMountainKey in keys:
       mountainKeys.add( aMountainKey )
 
+  minClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.minTime)
   maxClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxTime)
 
   mountainNames = set()
@@ -379,7 +381,7 @@ if __name__=="__main__":
     result = {}
     for aTozanguchi, theUrl in tozanguchi.items():
       parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew, args.listAllCache)
-      if parkInfo != None and TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, maxClimbTimeMinutes, args.minPark ):
+      if parkInfo != None and TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, minClimbTimeMinutes, maxClimbTimeMinutes, args.minPark ):
         result [ aTozanguchi ] = parkInfo
 
     if not args.mountainNameOnly and len(result)!=0:
