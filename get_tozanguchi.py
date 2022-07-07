@@ -376,6 +376,7 @@ if __name__=="__main__":
   maxClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxTime)
 
   mountainNames = set()
+  urlMap = {}
   for aMountain in mountainKeys:
     tozanguchi = tozanguchiDic[aMountain]
     result = {}
@@ -383,6 +384,7 @@ if __name__=="__main__":
       parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew, args.listAllCache)
       if parkInfo != None and TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, minClimbTimeMinutes, maxClimbTimeMinutes, args.minPark ):
         result [ aTozanguchi ] = parkInfo
+        urlMap[ str(parkInfo) ] = theUrl
 
     if not args.mountainNameOnly and len(result)!=0:
       print(aMountain + ":")
@@ -397,7 +399,7 @@ if __name__=="__main__":
       if not args.mountainNameOnly:
         if not args.compare:
           # normal tozanguchi dump mode
-          print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + theUrl )
+          print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + urlMap[ str(parkInfo) ] )
           TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
         else:
           # tozanguchi compare dump mode
