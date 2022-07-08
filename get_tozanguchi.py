@@ -21,6 +21,7 @@ import itertools
 import os
 import json
 import datetime
+import re
 
 from bs4 import BeautifulSoup
 import tozanguchiDic
@@ -61,6 +62,14 @@ class StrUtil:
       else:
         count_length += 2
     return value + pad * (length-count_length)
+
+  @staticmethod
+  def toInt(value):
+    nums = re.findall(r"\d+", value) #re.sub(r"\D", "", value)
+    result = 0
+    if len(nums) > 0:
+      result = int( nums[0] )
+    return result
 
 
 class TozanguchiCache:
@@ -262,7 +271,7 @@ class TozanguchiUtil:
       pos = parks.find("台")
       if pos!=-1:
         parks = parks[0:pos]
-      result = int( parks )
+      result = StrUtil.toInt( parks ) #int( parks )
 
     return result
 
@@ -356,10 +365,6 @@ if __name__=="__main__":
 
   args = parser.parse_args()
 
-  if len(args.args) == 0 and not args.listAllCache:
-    parser.print_help()
-    exit(-1)
-
   mountainKeys = set()
   mountains = set()
   if args.listAllCache:
@@ -367,6 +372,11 @@ if __name__=="__main__":
   else:
     mountains = set( args.args )
   mountains = MountainFilterUtil.mountainsIncludeExcludeFromFile( mountains, args.exclude, args.include )
+
+  if len(mountains) == 0 and not args.listAllCache:
+    parser.print_help()
+    exit(-1)
+
   for aMountain in mountains:
     keys = TozanguchiUtil.getMountainKeys(aMountain)
     for aMountainKey in keys:
