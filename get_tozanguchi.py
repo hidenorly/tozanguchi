@@ -333,12 +333,21 @@ class MountainFilterUtil:
         break
     return result
 
+  @staticmethod
+  def getSetOfCsvs( csvFiles ):
+    result = set()
+    csvFiles = csvFiles.split(",")
+    for aCsvFile in csvFiles:
+      aCsvFile = os.path.expanduser( aCsvFile )
+      theSet = set( itertools.chain.from_iterable( MountainFilterUtil.openCsv( aCsvFile ) ) )
+      result = result.union( theSet )
+    return result
 
   @staticmethod
   def mountainsIncludeExcludeFromFile( mountains, excludeFile, includeFile ):
     result = set()
-    excludes = set( itertools.chain.from_iterable( MountainFilterUtil.openCsv( excludeFile ) ) )
-    includes = set( itertools.chain.from_iterable( MountainFilterUtil.openCsv( includeFile ) ) )
+    excludes = MountainFilterUtil.getSetOfCsvs( excludeFile )
+    includes = MountainFilterUtil.getSetOfCsvs( includeFile )
     for aMountain in includes:
       mountains.add( aMountain )
     for aMountain in mountains:
