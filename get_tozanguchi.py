@@ -355,6 +355,15 @@ class MountainFilterUtil:
         result.add( aMountain )
     return result
 
+  @staticmethod
+  def mountainsHashExcludeFromFile( mountains, excludeFile ):
+    result = {}
+    excludes = MountainFilterUtil.getSetOfCsvs( excludeFile )
+    for aMountainName, theMountainInfo in mountains:
+      if not MountainFilterUtil.isMatchedMountainRobust( excludes, aMountainName ):
+        result[ aMountainName ] = theMountainInfo
+    return result
+
 
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
@@ -394,40 +403,42 @@ if __name__=="__main__":
   minClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.minTime)
   maxClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxTime)
 
+  excludes = MountainFilterUtil.getSetOfCsvs( args.exclude )
   mountainNames = set()
   urlMap = {}
   for aMountain in mountainKeys:
-    tozanguchi = tozanguchiDic[aMountain]
-    result = {}
-    for aTozanguchi, theUrl in tozanguchi.items():
-      parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew, args.listAllCache)
-      if parkInfo != None and TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, minClimbTimeMinutes, maxClimbTimeMinutes, args.minPark ):
-        result [ aTozanguchi ] = parkInfo
-        urlMap[ str(parkInfo) ] = theUrl
+    if not MountainFilterUtil.isMatchedMountainRobust( excludes, aMountain ):
+      tozanguchi = tozanguchiDic[aMountain]
+      result = {}
+      for aTozanguchi, theUrl in tozanguchi.items():
+        parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew, args.listAllCache)
+        if parkInfo != None and TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, minClimbTimeMinutes, maxClimbTimeMinutes, args.minPark ):
+          result [ aTozanguchi ] = parkInfo
+          urlMap[ str(parkInfo) ] = theUrl
 
-    if not args.mountainNameOnly and len(result)!=0:
-      print(aMountain + ":")
-      if not args.compare and not args.noDetails:
-        TozanguchiUtil.printMountainDetailInfo( aMountain )
+      if not args.mountainNameOnly and len(result)!=0:
+        print(aMountain + ":")
+        if not args.compare and not args.noDetails:
+          TozanguchiUtil.printMountainDetailInfo( aMountain )
 
+      result = dict( sorted( result.items(), reverse=args.sortReverse, key=lambda _data: ( TozanguchiUtil.getClimbTimeMinutes(aMountain, _data[0]), TozanguchiUtil.getClimbTimeMinutes(aMountain, _data[1]) ) ) )
 
-    result = dict( sorted( result.items(), reverse=args.sortReverse, key=lambda _data: ( TozanguchiUtil.getClimbTimeMinutes(aMountain, _data[0]), TozanguchiUtil.getClimbTimeMinutes(aMountain, _data[1]) ) ) )
-
-    for aTozanguchi, parkInfo in result.items():
-      mountainNames = mountainNames.union( set( aMountain.split("・") ) )
-      if not args.mountainNameOnly:
-        if not args.compare:
-          # normal tozanguchi dump mode
-          print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + urlMap[ str(parkInfo) ] )
-          TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
-        else:
-          # tozanguchi compare dump mode
-          TozanguchiUtil.showParkAndRoute( aMountain, parkInfo )
+      for aTozanguchi, parkInfo in result.items():
+        mountainNames = mountainNames.union( set( aMountain.split("・") ) )
+        if not args.mountainNameOnly:
+          if not args.compare:
+            # normal tozanguchi dump mode
+            print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + urlMap[ str(parkInfo) ] )
+            TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
+          else:
+            # tozanguchi compare dump mode
+            TozanguchiUtil.showParkAndRoute( aMountain, parkInfo )
 
   if args.mountainNameOnly:
     mountains = mountainNames
     if args.outputNotFound:
       mountains = mountains.union( set( set(args.args) - mountainKeys) )
     for aMountain in mountains:
-      print( aMountain + " ", end="" )
+      if not MountainFilterUtil.isMatchedMountainRobust( excludes, aMountain ):
+        print( aMountain + " ", end="" )
     print( "" )

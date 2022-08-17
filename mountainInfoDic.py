@@ -71,7 +71,7 @@ mountainInfos=[
   {"name":"美ヶ原", "area":"美ヶ原", "altitude":"2034m", "difficulty":"★", "fitnessLevel":"★★"},
   {"name":"霧ヶ峰", "area":"霧ヶ峰", "altitude":"1925m", "difficulty":"★", "fitnessLevel":"★"},
   {"name":"蓼科山", "area":"蓼科山", "altitude":"2530m", "difficulty":"★", "fitnessLevel":"★★"},
-  {"name":"八ヶ岳", "area":"八ヶ岳", "altitude":"2899m", "difficulty":"★★", "fitnessLevel":"★★"},
+  {"name":"八ヶ岳（赤岳）", "area":"八ヶ岳", "altitude":"2899m", "difficulty":"★★", "fitnessLevel":"★★"},
   {"name":"御嶽山", "area":"御嶽山", "altitude":"3067m", "difficulty":"★★", "fitnessLevel":"★★★"},
   {"name":"木曽駒ヶ岳", "area":"中央アルプス", "altitude":"2956m", "difficulty":"★★", "fitnessLevel":"★★"},
   {"name":"空木岳", "area":"中央アルプス", "altitude":"2864m", "difficulty":"★★★", "fitnessLevel":"★★★"},
