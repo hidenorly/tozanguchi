@@ -336,7 +336,7 @@ class MountainFilterUtil:
   @staticmethod
   def getSetOfCsvs( csvFiles ):
     result = set()
-    csvFiles = csvFiles.split(",")
+    csvFiles = str(csvFiles).split(",")
     for aCsvFile in csvFiles:
       aCsvFile = os.path.expanduser( aCsvFile )
       theSet = set( itertools.chain.from_iterable( MountainFilterUtil.openCsv( aCsvFile ) ) )
@@ -346,8 +346,12 @@ class MountainFilterUtil:
   @staticmethod
   def mountainsIncludeExcludeFromFile( mountains, excludeFile, includeFile ):
     result = set()
-    excludes = MountainFilterUtil.getSetOfCsvs( excludeFile )
-    includes = MountainFilterUtil.getSetOfCsvs( includeFile )
+    includes = set()
+    excludes = set()
+    for anExclude in excludeFile:
+      excludes =  excludes | MountainFilterUtil.getSetOfCsvs( anExclude )
+    for anInclude in includeFile:
+      includes = includes | MountainFilterUtil.getSetOfCsvs( anInclude )
     for aMountain in includes:
       mountains.add( aMountain )
     for aMountain in mountains:
@@ -372,8 +376,8 @@ if __name__=="__main__":
   parser.add_argument('-r', '--renew', action='store_true', default=False, help='get latest data although cache exists')
   parser.add_argument('-t', '--maxTime', action='store', default='', help='specify max climb time e.g. 5:00')
   parser.add_argument('-b', '--minTime', action='store', default='', help='specify min climb time e.g. 4:30')
-  parser.add_argument('-e', '--exclude', action='store', default='', help='specify excluding mountain list file e.g. climbedMountains.lst')
-  parser.add_argument('-i', '--include', action='store', default='', help='specify including mountain list file e.g. climbedMountains.lst')
+  parser.add_argument('-e', '--exclude', action='append', default=[], help='specify excluding mountain list file e.g. climbedMountains.lst')
+  parser.add_argument('-i', '--include', action='append', default=[], help='specify including mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-nn', '--mountainNameOnly', action='store_true', default=False, help='specify if you want to output mountain name only')
   parser.add_argument('-on', '--outputNotFound', action='store_true', default=False, help='specify if you want to output not found mountain too. For -nn')
   parser.add_argument('-s', '--sortReverse', action='store_true', default=False, help='specify if you want to output as reverse sort order')
