@@ -287,10 +287,11 @@ class TozanguchiUtil:
 
   @staticmethod
   def showParkAndRoute(mountainName, parkInfo):
-    pos = mountainName.find("_")
-    if pos!=-1:
-      mountainName = mountainName[0:pos-1]
-    _mountains = mountainName.split("・")
+    _mountains = re.split(r'[・/_]', mountainName)
+    mountains=set()
+    for _aMountain in _mountains:
+      _aMountain = _aMountain.strip()
+      mountains.add(_aMountain)
 
     theNumOfCarInPark = ""
     if "駐車台数" in parkInfo:
@@ -298,7 +299,7 @@ class TozanguchiUtil:
     if "主要登山ルート" in parkInfo:
       climbTimes = parkInfo["主要登山ルート"]
       for aClimbTime in climbTimes:
-        for _aMountain in _mountains:
+        for _aMountain in mountains:
           pos = aClimbTime.find(_aMountain)
           if pos!=-1:
             print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + aClimbTime + theNumOfCarInPark )
