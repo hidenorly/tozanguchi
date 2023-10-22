@@ -286,7 +286,7 @@ class TozanguchiUtil:
     return result
 
   @staticmethod
-  def showParkAndRoute(mountainName, parkInfo):
+  def showParkAndRoute(mountainName, parkInfo, url):
     _mountains = re.split(r'[・/_]', mountainName)
     mountains=set()
     for _aMountain in _mountains:
@@ -302,7 +302,7 @@ class TozanguchiUtil:
         for _aMountain in mountains:
           pos = aClimbTime.find(_aMountain)
           if pos!=-1:
-            print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + aClimbTime + theNumOfCarInPark )
+            print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + aClimbTime + theNumOfCarInPark + "\t" + url)
             break;
 
 class MountainFilterUtil:
@@ -437,7 +437,10 @@ if __name__=="__main__":
             TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
           else:
             # tozanguchi compare dump mode
-            TozanguchiUtil.showParkAndRoute( aMountain, parkInfo )
+            url = ""
+            if not args.mountainNameOnly and not args.noDetails:
+              url = urlMap[ str(parkInfo) ]
+            TozanguchiUtil.showParkAndRoute( aMountain, parkInfo, url)
 
   if args.mountainNameOnly:
     mountains = mountainNames
