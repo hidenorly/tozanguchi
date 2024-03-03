@@ -1,4 +1,4 @@
-#   Copyright 2021, 2022 hidenorly
+#   Copyright 2021, 2022, 2023, 2024 hidenorly
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -385,6 +385,7 @@ if __name__=="__main__":
   parser.add_argument('-p', '--minPark', action='store', default=0, help='specify the number of minimum car parking e.g. 0')
   parser.add_argument('-l', '--listAllCache', action='store_true', default=False, help='specify if you want to list up cached park')
   parser.add_argument('-nd', '--noDetails', action='store_true', default=False, help='specify if you want to disable to output the mountain info.')
+  parser.add_argument('-ll', '--latitudeLongitudeOnly', action='store_true', default=False, help='specify if you want to output tozanguchi latitude longitude only')
 
   args = parser.parse_args()
 
@@ -421,7 +422,7 @@ if __name__=="__main__":
           result [ aTozanguchi ] = parkInfo
           urlMap[ str(parkInfo) ] = theUrl
 
-      if not args.mountainNameOnly and len(result)!=0:
+      if not args.mountainNameOnly and not args.latitudeLongitudeOnly and len(result)!=0:
         print(aMountain + ":")
         if not args.compare and not args.noDetails:
           TozanguchiUtil.printMountainDetailInfo( aMountain )
@@ -431,7 +432,14 @@ if __name__=="__main__":
       for aTozanguchi, parkInfo in result.items():
         mountainNames = mountainNames.union( set( aMountain.split("・") ) )
         if not args.mountainNameOnly:
-          if not args.compare:
+          if args.latitudeLongitudeOnly:
+            if "緯度経度" in parkInfo:
+              latitude_longitude = parkInfo["緯度経度"]
+              pattern = r'(\d+\.\d+)\s+(\d+\.\d+)'
+              match = re.search(pattern, str(latitude_longitude))
+              if match:
+                print(f'{match.group(1)} {match.group(2)}')
+          elif not args.compare:
             # normal tozanguchi dump mode
             print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + urlMap[ str(parkInfo) ] )
             TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
