@@ -26,9 +26,24 @@ from get_tozanguchi import MountainFilterUtil
 import tozanguchiDic
 import mountainInfoDic
 
+from get_route_time import WebUtil
+from get_route_time import RouteUtil
 
 
 tozanguchiDic = tozanguchiDic.getTozanguchiDic()
+
+
+class GeoUtil:
+  @staticmethod
+  def getLatitudeLongitude(latitude_longitude):
+    latitude = None
+    longitude = None
+    pattern = r'(\d+\.\d+)\s+(\d+\.\d+)'
+    match = re.search(pattern, str(latitude_longitude))
+    if match:
+      latitude = match.group(1)
+      longitude = match.group(2)
+    return latitude, longitude
 
 
 if __name__=="__main__":
@@ -44,38 +59,50 @@ if __name__=="__main__":
 
   args = parser.parse_args()
 
-  mountainKeys = set()
   mountains = set( args.args )
   mountains = MountainFilterUtil.mountainsIncludeExcludeFromFile( mountains, args.exclude, args.include )
-
-  if len(mountains) == 0:
-    parser.print_help()
-    exit(-1)
-
-  for aMountain in mountains:
-    keys = TozanguchiUtil.getMountainKeys(aMountain)
-    for aMountainKey in keys:
-      mountainKeys.add( aMountainKey )
+  latitude, longitude = GeoUtil.getLatitudeLongitude(args.longitudelatitude)
 
   minRouteTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.minTime)
   maxRouteTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxTime)
 
-  pattern = r'(\d+\.\d+)\s+(\d+\.\d+)'
-  match = re.search(pattern, str(args.longitudelatitude))
-  if match:
-  	print(f'{match.group(1)} {match.group(2)}')
+  if len(mountains) == 0 or not latitude or not longitude:
+    parser.print_help()
+    exit(-1)
+
+  # enumerate tozanguchi park geolocations per mountain
+  tozanguchiParkInfos = {}
+  for aMountain in mountains:
+    if aMountain in tozanguchiDic:
+      tozanguchis = tozanguchiDic[aMountain]
+      tozanguchiParkInfos[ aMountain ] = set()
+      for aTozanguchi, theUrl in tozanguchis.items():
+        parkInfo = TozanguchiUtil.getParkInfo(theUrl)
+        if parkInfo != None:
+            if "緯度経度" in parkInfo:
+              _latitude, _longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
+              tozanguchiParkInfos[ aMountain ].add( (_latitude, _longitude) )
+
+  # enumerate route time to the tozanguchi park per mountain
+  driver = WebUtil.get_web_driver()
+  for aMountainName, tozanguchiParkGeos in tozanguchiParkInfos.items():
+    for aGeo in tozanguchiParkGeos:
+      directions_link = RouteUtil.generate_directions_link(latitude, longitude, aGeo[0], aGeo[1])
+      duration = RouteUtil.get_directions_duration(driver, directions_link)
+      print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration} {directions_link}')
 
 
-  excludes = MountainFilterUtil.getSetOfCsvs( args.exclude )
-  mountainNames = set()
-  urlMap = {}
-  parkInfo = None
-  for aMountain in mountainKeys:
-    if not MountainFilterUtil.isMatchedMountainRobust( excludes, aMountain ):
-      tozanguchi = tozanguchiDic[aMountain]
-      result = {}
-      for aTozanguchi, theUrl in tozanguchi.items():
-        parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew, False)
-        if parkInfo != None and TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo):
-          result [ aTozanguchi ] = parkInfo
-          urlMap[ str(parkInfo) ] = theUrl
+
+
+
+
+
+
+
+
+
+
+
+
+
+
