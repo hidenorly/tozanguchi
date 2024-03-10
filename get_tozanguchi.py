@@ -194,7 +194,7 @@ class TozanguchiUtil:
     return TozanguchiUtil.maintainParkInfo(result)
 
   @staticmethod
-  def showListAndDic(result, indent, startIndent):
+  def showListAndDic(parkInfo, indent, startIndent):
     for key, value in parkInfo.items():
       if isinstance(value, list):
         print(" "*startIndent + StrUtil.ljust_jp(key, indent-startIndent) + " : ", end="")
@@ -276,7 +276,7 @@ class TozanguchiUtil:
     return result
 
   @staticmethod
-  def isAcceptableTozanguchi(mountainName, parkInfo, minClimbTimeMinutes, maxClimbTimeMinutes, minPark):
+  def isAcceptableTozanguchi(mountainName, parkInfo, minClimbTimeMinutes=0, maxClimbTimeMinutes=0, minPark=0):
     result = True
 
     climbTimeMinutes = TozanguchiUtil.getClimbTimeMinutes(mountainName, parkInfo)
