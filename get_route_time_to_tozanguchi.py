@@ -87,22 +87,8 @@ if __name__=="__main__":
   driver = WebUtil.get_web_driver()
   for aMountainName, tozanguchiParkGeos in tozanguchiParkInfos.items():
     for aGeo in tozanguchiParkGeos:
-      directions_link = RouteUtil.generate_directions_link(latitude, longitude, aGeo[0], aGeo[1])
-      duration = RouteUtil.get_directions_duration(driver, directions_link)
-      print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration} {directions_link}')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      #directions_link = RouteUtil.generate_directions_link(latitude, longitude, aGeo[0], aGeo[1])
+      #duration = RouteUtil.get_directions_duration(driver, directions_link)
+      duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(driver, latitude, longitude, aGeo[0], aGeo[1])
+      if (maxRouteTimeMinutes==0 or duration_minutes>=minRouteTimeMinutes) and (maxRouteTimeMinutes==0 or duration_minutes<=maxRouteTimeMinutes):
+        print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
