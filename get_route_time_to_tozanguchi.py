@@ -85,10 +85,19 @@ if __name__=="__main__":
 
   # enumerate route time to the tozanguchi park per mountain
   driver = WebUtil.get_web_driver()
+  conditionedMountains = set()
   for aMountainName, tozanguchiParkGeos in tozanguchiParkInfos.items():
     for aGeo in tozanguchiParkGeos:
       #directions_link = RouteUtil.generate_directions_link(latitude, longitude, aGeo[0], aGeo[1])
       #duration = RouteUtil.get_directions_duration(driver, directions_link)
       duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(driver, latitude, longitude, aGeo[0], aGeo[1])
       if (maxRouteTimeMinutes==0 or duration_minutes>=minRouteTimeMinutes) and (maxRouteTimeMinutes==0 or duration_minutes<=maxRouteTimeMinutes):
-        print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
+        conditionedMountains.add(aMountainName)
+        if args.mountainNameOnly:
+          break
+        else:
+          print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
+
+  if args.mountainNameOnly:
+    conditionedMountains = sorted(conditionedMountains)
+    print( " ".join(conditionedMountains) )
