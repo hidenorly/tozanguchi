@@ -56,6 +56,7 @@ if __name__=="__main__":
   parser.add_argument('-e', '--exclude', action='append', default=[], help='specify excluding mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-i', '--include', action='append', default=[], help='specify including mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-nn', '--mountainNameOnly', action='store_true', default=False, help='specify if you want to output mountain name only')
+  parser.add_argument('-nd', '--noDetail', action='store_true', default=False, help='specify if you want to show as simple mode')
 
   args = parser.parse_args()
 
@@ -72,6 +73,7 @@ if __name__=="__main__":
 
   # enumerate tozanguchi park geolocations per mountain
   tozanguchiParkInfos = {}
+  detailParkInfo = {}
   for aMountain in mountains:
     if aMountain in tozanguchiDic:
       tozanguchis = tozanguchiDic[aMountain]
@@ -82,6 +84,10 @@ if __name__=="__main__":
             if "緯度経度" in parkInfo:
               _latitude, _longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
               tozanguchiParkInfos[ aMountain ].add( (_latitude, _longitude) )
+              _parkInfo = {}
+              _parkInfo["登山口"] = aTozanguchi
+              _parkInfo.update(parkInfo)
+              detailParkInfo[f'{_latitude}_{_longitude}'] = _parkInfo
 
   # enumerate route time to the tozanguchi park per mountain
   driver = WebUtil.get_web_driver()
@@ -96,7 +102,11 @@ if __name__=="__main__":
         if args.mountainNameOnly:
           break
         else:
-          print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
+          if args.noDetail:
+            print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
+          else:
+            print(aMountainName)
+            TozanguchiUtil.showListAndDic(detailParkInfo[f'{aGeo[0]}_{aGeo[1]}'], 20, 4)
 
   if args.mountainNameOnly:
     conditionedMountains = sorted(conditionedMountains)
