@@ -16,6 +16,10 @@ import sys
 import requests
 import argparse
 import re
+import os
+from datetime import timedelta, datetime
+import json
+import glob
 
 from get_tozanguchi import MountainDetailInfo
 from get_tozanguchi import StrUtil
@@ -28,6 +32,7 @@ import mountainInfoDic
 
 from get_route_time import WebUtil
 from get_route_time import RouteUtil
+
 
 
 tozanguchiDic = tozanguchiDic.getTozanguchiDic()
@@ -44,6 +49,87 @@ class GeoUtil:
       latitude = match.group(1)
       longitude = match.group(2)
     return latitude, longitude
+
+
+class GeoCache:
+  DEFAULT_CACHE_BASE_DIR = os.path.expanduser("~")+"/.cache"
+  DEFAULT_CACHE_ID = "geocache"
+  CACHE_INFINITE = -1
+  DEFAULT_CACHE_EXPIRE_HOURS = 24*30 # 30days
+
+  def __init__(self, cacheId = None, expireHour = None, numOfCache = None):
+    self.cacheBaseDir = os.path.join(GeoCache.DEFAULT_CACHE_BASE_DIR, cacheId) if cacheId else JsonCache.DEFAULT_CACHE_ID
+    self.expireHour = expireHour if expireHour else JsonCache.DEFAULT_CACHE_EXPIRE_HOURS
+    self.numOfCache = numOfCache if numOfCache else JsonCache.CACHE_INFINITE
+
+  def ensureCacheStorage(self):
+    if not os.path.exists(self.cacheBaseDir):
+      os.makedirs(self.cacheBaseDir)
+
+  def getCacheFilename(self, from_latitude, from_longitude, to_latitude, to_longitude):
+    result = f'{from_latitude}_{from_longitude}_{to_latitude}_{to_longitude}.json'
+    return result
+
+  def getCachePath(self, from_latitude, from_longitude, to_latitude, to_longitude):
+    return os.path.join(self.cacheBaseDir, self.getCacheFilename(from_latitude, from_longitude, to_latitude, to_longitude))
+
+  def limitNumOfCacheFiles(self):
+    if self.numOfCache!=self.CACHE_INFINITE:
+      files = glob.glob(f'{self.cacheBaseDir}/*.json')
+      files = sorted(files, key=os.path.getmtime, reverse=True)
+      remove_files = files[self.numOfCache:]
+      for aRemoveFile in remove_files:
+        try:
+          os.remove(aRemoveFile)
+        except:
+          pass
+
+
+  def storeToCache(self, from_latitude, from_longitude, to_latitude, to_longitude, result):
+    self.ensureCacheStorage()
+    cachePath = self.getCachePath( from_latitude, from_longitude, to_latitude, to_longitude )
+    dt_now = datetime.now()
+    _result = {
+      "lastUpdate":dt_now.strftime("%Y-%m-%d %H:%M:%S"),
+      "data": result
+    }
+    with open(cachePath, 'w', encoding='UTF-8') as f:
+      json.dump(_result, f, indent = 4, ensure_ascii=False)
+      f.close()
+    self.limitNumOfCacheFiles()
+
+
+  def isValidCache(self, lastUpdateString):
+    result = False
+    lastUpdate = datetime.strptime(lastUpdateString, "%Y-%m-%d %H:%M:%S")
+    dt_now = datetime.now()
+    if self.expireHour == self.CACHE_INFINITE or ( dt_now < ( lastUpdate+timedelta(hours=self.expireHour) ) ):
+      result = True
+
+    return result
+
+  def restoreFromCache(self, from_latitude, from_longitude, to_latitude, to_longitude):
+    result = None
+    cachePath = self.getCachePath( from_latitude, from_longitude, to_latitude, to_longitude )
+    if os.path.exists( cachePath ):
+      with open(cachePath, 'r', encoding='UTF-8') as f:
+        _result = json.load(f)
+        f.close()
+
+      if "lastUpdate" in _result:
+        if self.isValidCache( _result["lastUpdate"] ):
+          result = _result["data"]
+
+    return result
+
+  @staticmethod
+  def clearAllCache(cacheId):
+    files = glob.glob(f'{os.path.join(JsonCache.DEFAULT_CACHE_BASE_DIR, cacheId)}/*.json')
+    for aRemoveFile in files:
+      try:
+        os.remove(aRemoveFile)
+      except:
+        pass
 
 
 if __name__=="__main__":
@@ -66,6 +152,8 @@ if __name__=="__main__":
 
   minRouteTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.minTime)
   maxRouteTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxTime)
+
+  cache = GeoCache("routeTime", GeoCache.DEFAULT_CACHE_EXPIRE_HOURS, 1000)
 
   if len(mountains) == 0 or not latitude or not longitude:
     parser.print_help()
@@ -90,13 +178,25 @@ if __name__=="__main__":
               detailParkInfo[f'{_latitude}_{_longitude}'] = _parkInfo
 
   # enumerate route time to the tozanguchi park per mountain
-  driver = WebUtil.get_web_driver()
+  driver = None
   conditionedMountains = set()
   for aMountainName, tozanguchiParkGeos in tozanguchiParkInfos.items():
     for aGeo in tozanguchiParkGeos:
-      #directions_link = RouteUtil.generate_directions_link(latitude, longitude, aGeo[0], aGeo[1])
-      #duration = RouteUtil.get_directions_duration(driver, directions_link)
-      duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(driver, latitude, longitude, aGeo[0], aGeo[1])
+      duration_minutes = None
+      directions_link = None
+      cacheData = cache.restoreFromCache(latitude, longitude, aGeo[0], aGeo[1])
+      if cacheData:
+        duration_minutes = cacheData["duration_minutes"]
+        directions_link = cacheData["directions_link"]
+      else:
+        if not driver:
+          driver = WebUtil.get_web_driver()
+        duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(driver, latitude, longitude, aGeo[0], aGeo[1])
+        _data = {
+          "duration_minutes": duration_minutes,
+          "directions_link": directions_link,
+        }
+        cache.storeToCache(latitude, longitude, aGeo[0], aGeo[1], _data)
       if (maxRouteTimeMinutes==0 or duration_minutes>=minRouteTimeMinutes) and (maxRouteTimeMinutes==0 or duration_minutes<=maxRouteTimeMinutes):
         conditionedMountains.add(aMountainName)
         if args.mountainNameOnly:
@@ -106,7 +206,9 @@ if __name__=="__main__":
             print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
           else:
             print(aMountainName)
-            TozanguchiUtil.showListAndDic(detailParkInfo[f'{aGeo[0]}_{aGeo[1]}'], 20, 4)
+            detailParkInfo[f'{aGeo[0]}_{aGeo[1]}']["登山口への移動時間(分)"] = duration_minutes
+            TozanguchiUtil.showListAndDic(detailParkInfo[f'{aGeo[0]}_{aGeo[1]}'], 28
+              , 4)
 
   if args.mountainNameOnly:
     conditionedMountains = sorted(conditionedMountains)
