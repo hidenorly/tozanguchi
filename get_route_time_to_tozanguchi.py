@@ -132,6 +132,40 @@ class GeoCache:
         pass
 
 
+class CachedRouteUtil:
+  def __init__(self, cacheId = None, expireHour = None, numOfCache = None):
+    self.cacheId = cacheId if cacheId else JsonCache.DEFAULT_CACHE_ID
+    self.expireHour = expireHour if expireHour else JsonCache.DEFAULT_CACHE_EXPIRE_HOURS
+    self.numOfCache = numOfCache if numOfCache else JsonCache.CACHE_INFINITE
+
+    self.cache = GeoCache(self.cacheId, self.expireHour, self.numOfCache)
+
+    self.driver = None
+
+  def get_directions_duration_minutes(self, lat1, lon1, lat2, lon2):
+    duration_minutes = None
+    directions_link = None
+    cacheData = self.cache.restoreFromCache(lat1, lon1, lat2, lon2)
+
+    if cacheData:
+      duration_minutes = cacheData["duration_minutes"]
+      directions_link = cacheData["directions_link"]
+    else:
+      if not self.driver:
+        self.driver = WebUtil.get_web_driver()
+
+      duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(self.driver, lat1, lon1, lat2, lon2)
+      _data = {
+        "duration_minutes": duration_minutes,
+        "directions_link": directions_link,
+      }
+      self.cache.storeToCache(latitude, longitude, aGeo[0], aGeo[1], _data)
+
+    return duration_minutes, directions_link
+
+
+
+
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山')
@@ -153,7 +187,7 @@ if __name__=="__main__":
   minRouteTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.minTime)
   maxRouteTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxTime)
 
-  cache = GeoCache("routeTime", GeoCache.DEFAULT_CACHE_EXPIRE_HOURS, 1000)
+  cachedRouteUtil = CachedRouteUtil("routeTime", GeoCache.DEFAULT_CACHE_EXPIRE_HOURS, 1000)
 
   if len(mountains) == 0 or not latitude or not longitude:
     parser.print_help()
@@ -178,37 +212,19 @@ if __name__=="__main__":
               detailParkInfo[f'{_latitude}_{_longitude}'] = _parkInfo
 
   # enumerate route time to the tozanguchi park per mountain
-  driver = None
   conditionedMountains = set()
   for aMountainName, tozanguchiParkGeos in tozanguchiParkInfos.items():
     for aGeo in tozanguchiParkGeos:
-      duration_minutes = None
-      directions_link = None
-      cacheData = cache.restoreFromCache(latitude, longitude, aGeo[0], aGeo[1])
-      if cacheData:
-        duration_minutes = cacheData["duration_minutes"]
-        directions_link = cacheData["directions_link"]
-      else:
-        if not driver:
-          driver = WebUtil.get_web_driver()
-        duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(driver, latitude, longitude, aGeo[0], aGeo[1])
-        _data = {
-          "duration_minutes": duration_minutes,
-          "directions_link": directions_link,
-        }
-        cache.storeToCache(latitude, longitude, aGeo[0], aGeo[1], _data)
+      duration_minutes, directions_link = cachedRouteUtil.get_directions_duration_minutes(latitude, longitude, aGeo[0], aGeo[1])
       if (maxRouteTimeMinutes==0 or duration_minutes>=minRouteTimeMinutes) and (maxRouteTimeMinutes==0 or duration_minutes<=maxRouteTimeMinutes):
         conditionedMountains.add(aMountainName)
-        if args.mountainNameOnly:
-          break
-        else:
+        if not args.mountainNameOnly:
           if args.noDetail:
             print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
           else:
             print(aMountainName)
-            detailParkInfo[f'{aGeo[0]}_{aGeo[1]}']["登山口への移動時間(分)"] = duration_minutes
-            TozanguchiUtil.showListAndDic(detailParkInfo[f'{aGeo[0]}_{aGeo[1]}'], 28
-              , 4)
+            detailParkInfo[f'{aGeo[0]}_{aGeo[1]}']["登山口への移動時間"] = f'{duration_minutes}分 ({str(int(duration_minutes/60))}:{str(duration_minutes % 60)})'
+            TozanguchiUtil.showListAndDic(detailParkInfo[f'{aGeo[0]}_{aGeo[1]}'], 22, 4)
 
   if args.mountainNameOnly:
     conditionedMountains = sorted(conditionedMountains)

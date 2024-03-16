@@ -58,3 +58,48 @@ $ python3 get_tozanguchi.py 男体山 -c -s
 ```
 $ python3 get_tozanguchi.py 富士山 -c --maxTime=10:00
 ```
+
+
+
+# get_route_time_to_tozanguchi.py
+
+This has dependency to https://github.com/hidenorly/routeTime/
+You need to symlink or copy the ```get_route_time.py``` to the same directory.
+
+And also ensure selenium
+
+
+```
+usage: get_route_time_to_tozanguchi.py [-h] [-f LONGITUDELATITUDE] [-r]
+                                       [-t MAXTIME] [-b MINTIME] [-e EXCLUDE]
+                                       [-i INCLUDE] [-nn] [-nd]
+                                       [args ...]
+
+Parse command line options.
+
+positional arguments:
+  args                  mountain name such as 富士山
+
+options:
+  -h, --help            show this help message and exit
+  -f LONGITUDELATITUDE, --longitudelatitude LONGITUDELATITUDE
+                        Specify source place's longitutude latitude
+  -r, --renew           get latest data although cache exists
+  -t MAXTIME, --maxTime MAXTIME
+                        specify max route time e.g. 5:00
+  -b MINTIME, --minTime MINTIME
+                        specify min route time e.g. 4:30
+  -e EXCLUDE, --exclude EXCLUDE
+                        specify excluding mountain list file e.g.
+                        climbedMountains.lst
+  -i INCLUDE, --include INCLUDE
+                        specify including mountain list file e.g.
+                        climbedMountains.lst
+  -nn, --mountainNameOnly
+                        specify if you want to output mountain name only
+  -nd, --noDetail       specify if you want to show as simple mode
+  ```
+
+Recommended usage is to specify your geolocation information through ```-f``` (```--longitudelatitude```).
+
+
