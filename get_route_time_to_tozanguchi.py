@@ -66,12 +66,16 @@ class GeoCache:
     if not os.path.exists(self.cacheBaseDir):
       os.makedirs(self.cacheBaseDir)
 
-  def getCacheFilename(self, from_latitude, from_longitude, to_latitude, to_longitude):
-    result = f'{from_latitude}_{from_longitude}_{to_latitude}_{to_longitude}.json'
+  def getCacheFilename(self, from_latitude, from_longitude, to_latitude, to_longitude, tag=None):
+    result = f'{from_latitude}_{from_longitude}_{to_latitude}_{to_longitude}'
+    if tag:
+      result = f'{result}_{tag}.json'
+    else:
+      result = f'{result}.json'
     return result
 
-  def getCachePath(self, from_latitude, from_longitude, to_latitude, to_longitude):
-    return os.path.join(self.cacheBaseDir, self.getCacheFilename(from_latitude, from_longitude, to_latitude, to_longitude))
+  def getCachePath(self, from_latitude, from_longitude, to_latitude, to_longitude, tag=None):
+    return os.path.join(self.cacheBaseDir, self.getCacheFilename(from_latitude, from_longitude, to_latitude, to_longitude, tag))
 
   def limitNumOfCacheFiles(self):
     if self.numOfCache!=self.CACHE_INFINITE:
@@ -85,9 +89,9 @@ class GeoCache:
           pass
 
 
-  def storeToCache(self, from_latitude, from_longitude, to_latitude, to_longitude, result):
+  def storeToCache(self, from_latitude, from_longitude, to_latitude, to_longitude, result, tag=None):
     self.ensureCacheStorage()
-    cachePath = self.getCachePath( from_latitude, from_longitude, to_latitude, to_longitude )
+    cachePath = self.getCachePath( from_latitude, from_longitude, to_latitude, to_longitude, tag )
     dt_now = datetime.now()
     _result = {
       "lastUpdate":dt_now.strftime("%Y-%m-%d %H:%M:%S"),
@@ -108,9 +112,9 @@ class GeoCache:
 
     return result
 
-  def restoreFromCache(self, from_latitude, from_longitude, to_latitude, to_longitude):
+  def restoreFromCache(self, from_latitude, from_longitude, to_latitude, to_longitude, tag=None):
     result = None
-    cachePath = self.getCachePath( from_latitude, from_longitude, to_latitude, to_longitude )
+    cachePath = self.getCachePath( from_latitude, from_longitude, to_latitude, to_longitude, tag )
     if os.path.exists( cachePath ):
       with open(cachePath, 'r', encoding='UTF-8') as f:
         _result = json.load(f)
