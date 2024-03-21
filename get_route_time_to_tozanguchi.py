@@ -227,7 +227,7 @@ if __name__=="__main__":
             print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
           else:
             print(aMountainName)
-            detailParkInfo[f'{aGeo[0]}_{aGeo[1]}']["登山口への移動時間"] = f'{duration_minutes}分 ({str(int(duration_minutes/60))}:{str(duration_minutes % 60)})'
+            detailParkInfo[f'{aGeo[0]}_{aGeo[1]}']["登山口への移動時間"] = '{:d}分 ({:02d}:{:02d})'.format(duration_minutes, int(duration_minutes/60), duration_minutes % 60)
             TozanguchiUtil.showListAndDic(detailParkInfo[f'{aGeo[0]}_{aGeo[1]}'], 22, 4)
 
   if args.mountainNameOnly:
