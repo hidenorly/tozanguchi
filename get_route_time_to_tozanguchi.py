@@ -146,10 +146,43 @@ class CachedRouteUtil:
 
     self.driver = None
 
+  def get_timezone_tag(self):
+    result = None
+    dt_now = datetime.now()
+
+    hour = int(dt_now.hour)
+    if dt_now.minute!=0:
+      hour = hour + float(dt_now.minute/60)
+
+    if 3 <= hour <= 5:
+        result = "early_morning"
+    elif 5 <= hour <= 8:
+        result = "morning"
+    elif 8 <= hour <= 10:
+        result = "late_morning"
+    elif 10 <= hour <= 13:
+        result = "lunch"
+    elif 13 <= hour <= 15:
+        result = "late_lunch"
+    elif 15 <= hour <= 18:
+        result = "afternoon"
+    elif 18 <= hour <= 20:
+        result = "evening"
+    elif 20 <= hour <= 22:
+        result = "night"
+    elif 22 <= hour <= 23 or 0 <= hour <= 3:
+        result = "midnight"
+
+    if dt_now.weekday()>=5:
+      result = f'weekday_{result}'
+
+    return result
+
   def get_directions_duration_minutes(self, lat1, lon1, lat2, lon2):
     duration_minutes = None
     directions_link = None
-    cacheData = self.cache.restoreFromCache(lat1, lon1, lat2, lon2)
+    tag = self.get_timezone_tag()
+    cacheData = self.cache.restoreFromCache(lat1, lon1, lat2, lon2, tag)
 
     if cacheData:
       duration_minutes = cacheData["duration_minutes"]
@@ -163,7 +196,7 @@ class CachedRouteUtil:
         "duration_minutes": duration_minutes,
         "directions_link": directions_link,
       }
-      self.cache.storeToCache(latitude, longitude, aGeo[0], aGeo[1], _data)
+      self.cache.storeToCache(latitude, longitude, aGeo[0], aGeo[1], _data, tag)
 
     return duration_minutes, directions_link
 
