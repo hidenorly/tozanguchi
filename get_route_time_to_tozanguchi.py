@@ -248,6 +248,14 @@ if __name__=="__main__":
               _parkInfo.update(parkInfo)
               detailParkInfo[f'{_latitude}_{_longitude}'] = _parkInfo
 
+  # sort
+  sorted_tozanguchiParkInfos = {}
+  _tozanguchiParkInfos = sorted( tozanguchiParkInfos.items() )
+  for mountain, coords_set in _tozanguchiParkInfos:
+      sorted_coords_list = sorted(coords_set, key=lambda x: str(x))
+      sorted_tozanguchiParkInfos[mountain] = sorted_coords_list
+  tozanguchiParkInfos = sorted_tozanguchiParkInfos
+
   # enumerate route time to the tozanguchi park per mountain
   conditionedMountains = set()
   for aMountainName, tozanguchiParkGeos in tozanguchiParkInfos.items():
