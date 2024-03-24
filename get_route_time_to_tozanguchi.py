@@ -245,6 +245,7 @@ if __name__=="__main__":
               tozanguchiParkInfos[ aMountain ].add( (_latitude, _longitude) )
               _parkInfo = {}
               _parkInfo["登山口"] = aTozanguchi
+              _parkInfo["url"] = theUrl
               _parkInfo.update(parkInfo)
               detailParkInfo[f'{_latitude}_{_longitude}'] = _parkInfo
 
