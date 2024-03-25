@@ -370,6 +370,19 @@ class MountainFilterUtil:
     return result
 
 
+class GeoUtil:
+  @staticmethod
+  def getLatitudeLongitude(latitude_longitude):
+    latitude = None
+    longitude = None
+    pattern = r'(\d+\.\d+)\s+(\d+\.\d+)'
+    match = re.search(pattern, str(latitude_longitude))
+    if match:
+      latitude = match.group(1)
+      longitude = match.group(2)
+    return latitude, longitude
+
+
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山')
@@ -434,11 +447,9 @@ if __name__=="__main__":
         if not args.mountainNameOnly:
           if args.latitudeLongitudeOnly:
             if "緯度経度" in parkInfo:
-              latitude_longitude = parkInfo["緯度経度"]
-              pattern = r'(\d+\.\d+)\s+(\d+\.\d+)'
-              match = re.search(pattern, str(latitude_longitude))
-              if match:
-                print(f'{match.group(1)} {match.group(2)}')
+              latitude, longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
+              if latitude and longitude:
+                print(f'{latitude} {longitude}')
           elif not args.compare:
             # normal tozanguchi dump mode
             print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + urlMap[ str(parkInfo) ] )
