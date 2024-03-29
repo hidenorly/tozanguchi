@@ -20,6 +20,9 @@ import os
 from datetime import timedelta, datetime
 import json
 import glob
+import shlex
+import subprocess
+import time
 
 from get_tozanguchi import MountainDetailInfo
 from get_tozanguchi import StrUtil
@@ -201,6 +204,19 @@ class CachedRouteUtil:
     return duration_minutes, directions_link
 
 
+class ExecUtil:
+  @staticmethod
+  def _getOpen():
+    result = "open"
+    if sys.platform.startswith('win'):
+      result = "start"
+    return result
+
+  @staticmethod
+  def open(url):
+    exec_cmd = f'{ExecUtil._getOpen()} {shlex.quote(url)}'
+    result = subprocess.run(exec_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+    return result
 
 
 if __name__=="__main__":
@@ -214,6 +230,7 @@ if __name__=="__main__":
   parser.add_argument('-i', '--include', action='append', default=[], help='specify including mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-nn', '--mountainNameOnly', action='store_true', default=False, help='specify if you want to output mountain name only')
   parser.add_argument('-nd', '--noDetail', action='store_true', default=False, help='specify if you want to show as simple mode')
+  parser.add_argument('-o', '--openNavi', action='store_true', default=False, help='specify if you want to open the route navi')
 
   args = parser.parse_args()
 
@@ -259,10 +276,12 @@ if __name__=="__main__":
 
   # enumerate route time to the tozanguchi park per mountain
   conditionedMountains = set()
+  n = 0
   for aMountainName, tozanguchiParkGeos in tozanguchiParkInfos.items():
     for aGeo in tozanguchiParkGeos:
       duration_minutes, directions_link = cachedRouteUtil.get_directions_duration_minutes(latitude, longitude, aGeo[0], aGeo[1])
       if (maxRouteTimeMinutes==0 or duration_minutes>=minRouteTimeMinutes) and (maxRouteTimeMinutes==0 or duration_minutes<=maxRouteTimeMinutes):
+        n = n + 1
         conditionedMountains.add(aMountainName)
         if not args.mountainNameOnly:
           if args.noDetail:
@@ -271,6 +290,10 @@ if __name__=="__main__":
             print(aMountainName)
             detailParkInfo[f'{aGeo[0]}_{aGeo[1]}']["登山口への移動時間"] = '{:d}分 ({:02d}:{:02d})'.format(duration_minutes, int(duration_minutes/60), duration_minutes % 60)
             TozanguchiUtil.showListAndDic(detailParkInfo[f'{aGeo[0]}_{aGeo[1]}'], 22, 4)
+        if args.openNavi:
+          if n>=2:
+            time.sleep(0.5)
+          ExecUtil.open(directions_link)
 
   if args.mountainNameOnly:
     conditionedMountains = sorted(conditionedMountains)
