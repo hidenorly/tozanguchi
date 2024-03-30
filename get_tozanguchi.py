@@ -22,6 +22,9 @@ import os
 import json
 import datetime
 import re
+import shlex
+import subprocess
+import time
 
 from bs4 import BeautifulSoup
 import tozanguchiDic
@@ -383,6 +386,21 @@ class GeoUtil:
     return latitude, longitude
 
 
+class ExecUtil:
+  @staticmethod
+  def _getOpen():
+    result = "open"
+    if sys.platform.startswith('win'):
+      result = "start"
+    return result
+
+  @staticmethod
+  def open(url):
+    exec_cmd = f'{ExecUtil._getOpen()} {shlex.quote(url)}'
+    result = subprocess.run(exec_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+    return result
+
+
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山')
@@ -399,6 +417,7 @@ if __name__=="__main__":
   parser.add_argument('-l', '--listAllCache', action='store_true', default=False, help='specify if you want to list up cached park')
   parser.add_argument('-nd', '--noDetails', action='store_true', default=False, help='specify if you want to disable to output the mountain info.')
   parser.add_argument('-ll', '--latitudeLongitudeOnly', action='store_true', default=False, help='specify if you want to output tozanguchi latitude longitude only')
+  parser.add_argument('-o', '--openUrl', action='store_true', default=False, help='specify if you want to open the url')
 
   args = parser.parse_args()
 
@@ -425,6 +444,7 @@ if __name__=="__main__":
   excludes = MountainFilterUtil.getSetOfCsvs( args.exclude )
   mountainNames = set()
   urlMap = {}
+  n = 0
   for aMountain in mountainKeys:
     if not MountainFilterUtil.isMatchedMountainRobust( excludes, aMountain ):
       tozanguchi = tozanguchiDic[aMountain]
@@ -432,8 +452,13 @@ if __name__=="__main__":
       for aTozanguchi, theUrl in tozanguchi.items():
         parkInfo = TozanguchiUtil.getParkInfo(theUrl, args.renew, args.listAllCache)
         if parkInfo != None and TozanguchiUtil.isAcceptableTozanguchi( aMountain, parkInfo, minClimbTimeMinutes, maxClimbTimeMinutes, args.minPark ):
+          n = n + 1
           result [ aTozanguchi ] = parkInfo
           urlMap[ str(parkInfo) ] = theUrl
+          if args.openUrl:
+            if n>=2:
+              time.sleep(0.5)
+            ExecUtil.open(theUrl)
 
       if not args.mountainNameOnly and not args.latitudeLongitudeOnly and len(result)!=0:
         print(aMountain + ":")
