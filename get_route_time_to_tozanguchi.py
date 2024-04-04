@@ -226,6 +226,8 @@ if __name__=="__main__":
   parser.add_argument('-r', '--renew', action='store_true', default=False, help='get latest data although cache exists')
   parser.add_argument('-t', '--maxTime', action='store', default='', help='specify max route time e.g. 5:00')
   parser.add_argument('-b', '--minTime', action='store', default='', help='specify min route time e.g. 4:30')
+  parser.add_argument('-u', '--maxClimbTime', action='store', default='', help='specify max climb time e.g. 5:00')
+  parser.add_argument('-m', '--minClimbTime', action='store', default='', help='specify min climb time e.g. 4:30')
   parser.add_argument('-p', '--minPark', action='store', type=int, default=0, help='specify the number of minimum car parking e.g. 0')
   parser.add_argument('-e', '--exclude', action='append', default=[], help='specify excluding mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-i', '--include', action='append', default=[], help='specify including mountain list file e.g. climbedMountains.lst')
@@ -241,6 +243,8 @@ if __name__=="__main__":
 
   minRouteTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.minTime)
   maxRouteTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxTime)
+  minClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.minClimbTime)
+  maxClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxClimbTime)
 
   cachedRouteUtil = CachedRouteUtil("routeTime", GeoCache.DEFAULT_CACHE_EXPIRE_HOURS, 1000)
 
@@ -258,15 +262,16 @@ if __name__=="__main__":
       for aTozanguchi, theUrl in tozanguchis.items():
         parkInfo = TozanguchiUtil.getParkInfo(theUrl)
         if parkInfo != None:
-            if args.minPark==0 or ( TozanguchiUtil.getTheNumberOfCarPark(parkInfo) >= int(args.minPark) ):
-              if "緯度経度" in parkInfo:
-                _latitude, _longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
-                tozanguchiParkInfos[ aMountain ].add( (_latitude, _longitude) )
-                _parkInfo = {}
-                _parkInfo["登山口"] = aTozanguchi
-                _parkInfo["url"] = theUrl
-                _parkInfo.update(parkInfo)
-                detailParkInfo[f'{_latitude}_{_longitude}'] = _parkInfo
+          #if args.minPark==0 or ( TozanguchiUtil.getTheNumberOfCarPark(parkInfo) >= int(args.minPark) ):
+          if TozanguchiUtil.isAcceptableTozanguchi(aMountain, parkInfo, minClimbTimeMinutes, maxClimbTimeMinutes, int(args.minPark)):
+            if "緯度経度" in parkInfo:
+              _latitude, _longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
+              tozanguchiParkInfos[ aMountain ].add( (_latitude, _longitude) )
+              _parkInfo = {}
+              _parkInfo["登山口"] = aTozanguchi
+              _parkInfo["url"] = theUrl
+              _parkInfo.update(parkInfo)
+              detailParkInfo[f'{_latitude}_{_longitude}'] = _parkInfo
 
   # sort
   sorted_tozanguchiParkInfos = {}
