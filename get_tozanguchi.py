@@ -238,7 +238,7 @@ class TozanguchiUtil:
       for aClimbTime in climbTimes:
         for _aMountain in _mountains:
           pos = aClimbTime.find(_aMountain)
-          if pos!=-1:
+          if pos==0:
             pos = aClimbTime.find("往復所要時間：")
             if pos!=-1:
               pos2 = aClimbTime.find("分)", pos)
