@@ -234,6 +234,7 @@ if __name__=="__main__":
   parser.add_argument('-nn', '--mountainNameOnly', action='store_true', default=False, help='specify if you want to output mountain name only')
   parser.add_argument('-nd', '--noDetail', action='store_true', default=False, help='specify if you want to show as simple mode')
   parser.add_argument('-o', '--openNavi', action='store_true', default=False, help='specify if you want to open the route navi')
+  parser.add_argument('-g', '--openPark', action='store_true', default=False, help='specify if you want to open the park info.')
 
   args = parser.parse_args()
 
@@ -290,17 +291,20 @@ if __name__=="__main__":
       if (maxRouteTimeMinutes==0 or duration_minutes>=minRouteTimeMinutes) and (maxRouteTimeMinutes==0 or duration_minutes<=maxRouteTimeMinutes):
         n = n + 1
         conditionedMountains.add(aMountainName)
+        _detailParkInfo = detailParkInfo[f'{aGeo[0]}_{aGeo[1]}']
         if not args.mountainNameOnly:
           if args.noDetail:
             print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
           else:
             print(aMountainName)
-            detailParkInfo[f'{aGeo[0]}_{aGeo[1]}']["登山口への移動時間"] = '{:d}分 ({:02d}:{:02d})'.format(duration_minutes, int(duration_minutes/60), duration_minutes % 60)
-            TozanguchiUtil.showListAndDic(detailParkInfo[f'{aGeo[0]}_{aGeo[1]}'], 22, 4)
+            _detailParkInfo["登山口への移動時間"] = '{:d}分 ({:02d}:{:02d})'.format(duration_minutes, int(duration_minutes/60), duration_minutes % 60)
+            TozanguchiUtil.showListAndDic(_detailParkInfo, 22, 4)
         if args.openNavi:
           if n>=2:
             time.sleep(0.5)
           ExecUtil.open(directions_link)
+        if args.openPark and "url" in _detailParkInfo:
+          ExecUtil.open(_detailParkInfo["url"])
 
   if args.mountainNameOnly:
     conditionedMountains = sorted(conditionedMountains)
