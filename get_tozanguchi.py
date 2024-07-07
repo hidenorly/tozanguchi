@@ -470,21 +470,31 @@ if __name__=="__main__":
       for aTozanguchi, parkInfo in result.items():
         mountainNames = mountainNames.union( set( aMountain.split("・") ) )
         if not args.mountainNameOnly:
-          if args.latitudeLongitudeOnly:
-            if "緯度経度" in parkInfo:
-              latitude, longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
-              if latitude and longitude:
-                print(f'{latitude} {longitude}')
-          elif not args.compare:
-            # normal tozanguchi dump mode
-            print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + urlMap[ str(parkInfo) ] )
-            TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
+          latitude = longitude = None
+          if "緯度経度" in parkInfo:
+            latitude, longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
+          if args.latitudeLongitudeOnly and latitude and longitude:
+            print(f'{latitude} {longitude}')
           else:
-            # tozanguchi compare dump mode
-            url = ""
-            if not args.mountainNameOnly and not args.noDetails:
-              url = urlMap[ str(parkInfo) ]
-            TozanguchiUtil.showParkAndRoute( aMountain, parkInfo, url)
+            if not args.compare:
+              # normal tozanguchi dump mode
+              try:
+                # you need to symlink get_mapcode in the same path
+                from get_mapcode import get_mapcode
+                url = urlMap[ str(parkInfo) ]
+                parkInfo["mapcode"] = get_mapcode(latitude, longitude)
+                parkInfo["緯度経度"] = f"{latitude} {longitude}"
+                urlMap[ str(parkInfo) ] = url
+              except:
+                pass
+              print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + urlMap[ str(parkInfo) ] )
+              TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
+            else:
+              # tozanguchi compare dump mode
+              url = ""
+              if not args.mountainNameOnly and not args.noDetails:
+                url = urlMap[ str(parkInfo) ]
+              TozanguchiUtil.showParkAndRoute( aMountain, parkInfo, url)
 
   if args.mountainNameOnly:
     mountains = mountainNames
