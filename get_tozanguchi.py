@@ -164,6 +164,16 @@ class TozanguchiCache:
     result = TozanguchiCache.getCachedParkInfo( url )
     if (result == None or forceReload) and (noneIfCacheMiss == False):
       result = TozanguchiCache.getRawParkInfo( url )
+      latitude = longitude = None
+      if "緯度経度" in result:
+        latitude, longitude = GeoUtil.getLatitudeLongitude(result["緯度経度"])
+        result["緯度経度"] = f"{latitude} {longitude}"
+      try:
+        # you need to symlink get_mapcode in the same path
+        from get_mapcode import get_mapcode
+        result["mapcode"] = get_mapcode(latitude, longitude)
+      except:
+        pass
       TozanguchiCache.storeParkInfoAsCache( url, result )
     return result
 
@@ -470,23 +480,13 @@ if __name__=="__main__":
       for aTozanguchi, parkInfo in result.items():
         mountainNames = mountainNames.union( set( aMountain.split("・") ) )
         if not args.mountainNameOnly:
-          latitude = longitude = None
-          if "緯度経度" in parkInfo:
-            latitude, longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
-          if args.latitudeLongitudeOnly and latitude and longitude:
-            print(f'{latitude} {longitude}')
+          if args.latitudeLongitudeOnly:
+            if "緯度経度" in parkInfo:
+              latitude, longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
+              print(f'{latitude} {longitude}')
           else:
             if not args.compare:
               # normal tozanguchi dump mode
-              try:
-                # you need to symlink get_mapcode in the same path
-                from get_mapcode import get_mapcode
-                url = urlMap[ str(parkInfo) ]
-                parkInfo["mapcode"] = get_mapcode(latitude, longitude)
-                parkInfo["緯度経度"] = f"{latitude} {longitude}"
-                urlMap[ str(parkInfo) ] = url
-              except:
-                pass
               print( "  " + StrUtil.ljust_jp(aTozanguchi, 18) + " : " + urlMap[ str(parkInfo) ] )
               TozanguchiUtil.showListAndDic(parkInfo, 20, 4)
             else:
