@@ -1,4 +1,4 @@
-#   Copyright 2021, 2022, 2023, 2024 hidenorly
+#   Copyright 2024 hidenorly
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -140,12 +140,13 @@ class GeoCache:
 
 
 class CachedRouteUtil:
-  def __init__(self, cacheId = None, expireHour = None, numOfCache = None):
+  def __init__(self, cacheId = None, expireHour = None, numOfCache = None, forceReload=False):
     self.cacheId = cacheId if cacheId else JsonCache.DEFAULT_CACHE_ID
     self.expireHour = expireHour if expireHour else JsonCache.DEFAULT_CACHE_EXPIRE_HOURS
     self.numOfCache = numOfCache if numOfCache else JsonCache.CACHE_INFINITE
 
     self.cache = GeoCache(self.cacheId, self.expireHour, self.numOfCache)
+    self.forceReload = forceReload
 
     self.driver = None
 
@@ -187,7 +188,7 @@ class CachedRouteUtil:
     tag = self.get_timezone_tag()
     cacheData = self.cache.restoreFromCache(lat1, lon1, lat2, lon2, tag)
 
-    if cacheData:
+    if cacheData and not self.forceReload:
       duration_minutes = cacheData["duration_minutes"]
       directions_link = cacheData["directions_link"]
     else:
@@ -247,7 +248,7 @@ if __name__=="__main__":
   minClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.minClimbTime)
   maxClimbTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.maxClimbTime)
 
-  cachedRouteUtil = CachedRouteUtil("routeTime", GeoCache.DEFAULT_CACHE_EXPIRE_HOURS, 1000)
+  cachedRouteUtil = CachedRouteUtil("routeTime", GeoCache.DEFAULT_CACHE_EXPIRE_HOURS, 1000, args.renew)
 
   if len(mountains) == 0 or not latitude or not longitude:
     parser.print_help()
