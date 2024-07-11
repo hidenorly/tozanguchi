@@ -8,6 +8,14 @@ DO NOT USE THIS.
 $ python3 tozanguchi_list_mountains.py "https://tozanguchinavi.com/mt" "https://tozanguchinavi.com/mt/page/" 2 2 > tozanguchiDic.py
 ```
 
+# for mapcode support
+
+This has dependency to https://github.com/hidenorly/mapcode
+You need to symlink or copy the ```get_mapcode.py``` to the same directory.
+
+If there is no ```get_mapcode.py```, the mapcode isn't output.
+
+
 # help
 
 ```
