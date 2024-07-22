@@ -29,6 +29,7 @@ from get_tozanguchi import StrUtil
 from get_tozanguchi import TozanguchiCache
 from get_tozanguchi import TozanguchiUtil
 from get_tozanguchi import MountainFilterUtil
+from get_tozanguchi import GeoUtil
 
 import tozanguchiDic
 import mountainInfoDic
@@ -41,17 +42,6 @@ from get_route_time import RouteUtil
 tozanguchiDic = tozanguchiDic.getTozanguchiDic()
 
 
-class GeoUtil:
-  @staticmethod
-  def getLatitudeLongitude(latitude_longitude):
-    latitude = None
-    longitude = None
-    pattern = r'(\d+\.\d+)\s+(\d+\.\d+)'
-    match = re.search(pattern, str(latitude_longitude))
-    if match:
-      latitude = match.group(1)
-      longitude = match.group(2)
-    return latitude, longitude
 
 
 class GeoCache:
@@ -241,6 +231,15 @@ if __name__=="__main__":
 
   mountains = set( args.args )
   mountains = MountainFilterUtil.mountainsIncludeExcludeFromFile( mountains, args.exclude, args.include )
+
+  # search by tozanguchi (and convert to mountain name)
+  filter_tozanguchi = set()
+  for tozanguchi in list(set( args.args )):
+    for mountainname,tozanguchis in tozanguchiDic.items():
+      if tozanguchi in tozanguchis:
+        mountains.add(mountainname)
+        filter_tozanguchi.add(tozanguchi)
+
   latitude, longitude = GeoUtil.getLatitudeLongitude(args.longitudelatitude)
 
   minRouteTimeMinutes = TozanguchiUtil.getMinutesFromHHMM(args.minTime)
@@ -257,6 +256,7 @@ if __name__=="__main__":
   # enumerate tozanguchi park geolocations per mountain
   tozanguchiParkInfos = {}
   detailParkInfo = {}
+  # search by mountain name (mountains)
   for aMountain in mountains:
     if aMountain in tozanguchiDic:
       tozanguchis = tozanguchiDic[aMountain]
@@ -266,7 +266,7 @@ if __name__=="__main__":
         if parkInfo != None:
           #if args.minPark==0 or ( TozanguchiUtil.getTheNumberOfCarPark(parkInfo) >= int(args.minPark) ):
           if TozanguchiUtil.isAcceptableTozanguchi(aMountain, parkInfo, minClimbTimeMinutes, maxClimbTimeMinutes, int(args.minPark)):
-            if "緯度経度" in parkInfo:
+            if "緯度経度" in parkInfo:# and (not filter_tozanguchi or aTozanguchi in filter_tozanguchi):
               _latitude, _longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
               tozanguchiParkInfos[ aMountain ].add( (_latitude, _longitude) )
               _parkInfo = {}
