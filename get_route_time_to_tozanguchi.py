@@ -213,7 +213,8 @@ class ExecUtil:
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山')
-  parser.add_argument('-f', '--longitudelatitude', action='store', default='35.658581 139.745433', help="Specify source place's longitutude latitude")
+  parser.add_argument('-f', '--filter', action='store_true', default=False, help="Specify if you want to filter out with 登山口")
+  parser.add_argument('-l', '--longitudelatitude', action='store', default='35.658581 139.745433', help="Specify source place's longitutude latitude")
   parser.add_argument('-r', '--renew', action='store_true', default=False, help='get latest data although cache exists')
   parser.add_argument('-t', '--maxTime', action='store', default='', help='specify max route time e.g. 5:00')
   parser.add_argument('-b', '--minTime', action='store', default='', help='specify min route time e.g. 4:30')
@@ -266,7 +267,7 @@ if __name__=="__main__":
         if parkInfo != None:
           #if args.minPark==0 or ( TozanguchiUtil.getTheNumberOfCarPark(parkInfo) >= int(args.minPark) ):
           if TozanguchiUtil.isAcceptableTozanguchi(aMountain, parkInfo, minClimbTimeMinutes, maxClimbTimeMinutes, int(args.minPark)):
-            if "緯度経度" in parkInfo:# and (not filter_tozanguchi or aTozanguchi in filter_tozanguchi):
+            if "緯度経度" in parkInfo and (not args.filter or (not filter_tozanguchi or aTozanguchi in filter_tozanguchi)):
               _latitude, _longitude = GeoUtil.getLatitudeLongitude(parkInfo["緯度経度"])
               tozanguchiParkInfos[ aMountain ].add( (_latitude, _longitude) )
               _parkInfo = {}
