@@ -299,7 +299,7 @@ class TozanguchiUtil:
     return result
 
   @staticmethod
-  def showParkAndRoute(mountainName, parkInfo, url):
+  def showParkAndRoute(mountainName, parkInfo, aTozanguchi, url):
     _mountains = re.split(r'[・/_]', mountainName)
     mountains=set()
     for _aMountain in _mountains:
@@ -494,7 +494,7 @@ if __name__=="__main__":
               url = ""
               if not args.mountainNameOnly and not args.noDetails:
                 url = urlMap[ str(parkInfo) ]
-              TozanguchiUtil.showParkAndRoute( aMountain, parkInfo, url)
+              TozanguchiUtil.showParkAndRoute( aMountain, parkInfo, aTozanguchi, url)
 
   if args.mountainNameOnly:
     mountains = mountainNames

@@ -224,9 +224,10 @@ if __name__=="__main__":
   parser.add_argument('-e', '--exclude', action='append', default=[], help='specify excluding mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-i', '--include', action='append', default=[], help='specify including mountain list file e.g. climbedMountains.lst')
   parser.add_argument('-nn', '--mountainNameOnly', action='store_true', default=False, help='specify if you want to output mountain name only')
-  parser.add_argument('-nd', '--noDetail', action='store_true', default=False, help='specify if you want to show as simple mode')
+  parser.add_argument('-nd', '--noDetails', action='store_true', default=False, help='specify if you want to show as simple mode')
   parser.add_argument('-o', '--openNavi', action='store_true', default=False, help='specify if you want to open the route navi')
   parser.add_argument('-g', '--openPark', action='store_true', default=False, help='specify if you want to open the park info.')
+  parser.add_argument('-c', '--compare', action='store_true', default=False, help='compare tozanguchi per climbtime')
 
   args = parser.parse_args()
 
@@ -295,12 +296,27 @@ if __name__=="__main__":
         conditionedMountains.add(aMountainName)
         _detailParkInfo = detailParkInfo[f'{aGeo[0]}_{aGeo[1]}']
         if not args.mountainNameOnly:
-          if args.noDetail:
-            print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
+          _detailParkInfo["登山口への移動時間"] = '{:d}分 ({:02d}:{:02d})'.format(duration_minutes, int(duration_minutes/60), duration_minutes % 60)
+          if args.compare:
+              # tozanguchi compare dump mode
+              if _detailParkInfo['主要登山ルート']:
+                for aRoute in _detailParkInfo['主要登山ルート']:
+                  if aMountainName in aRoute:
+                    route_time = aRoute[len(aMountainName):]
+                    pos = route_time.find("：")
+                    if pos!=-1:
+                      route_time = route_time[pos+1:len(route_time)-1]
+                    transport_time = _detailParkInfo["登山口への移動時間"]
+                    pos = transport_time.find("(")
+                    if pos!=-1:
+                      transport_time = transport_time[pos+1:len(transport_time)-1]
+                    print(f'{StrUtil.ljust_jp(aMountainName,12)} {StrUtil.ljust_jp(_detailParkInfo['登山口'],18)} {StrUtil.ljust_jp(transport_time,6)} {StrUtil.ljust_jp(route_time,10)} {_detailParkInfo['駐車台数']}')
           else:
-            print(aMountainName)
-            _detailParkInfo["登山口への移動時間"] = '{:d}分 ({:02d}:{:02d})'.format(duration_minutes, int(duration_minutes/60), duration_minutes % 60)
-            TozanguchiUtil.showListAndDic(_detailParkInfo, 22, 4)
+            if args.noDetail:
+              print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
+            else:
+              print(aMountainName)
+              TozanguchiUtil.showListAndDic(_detailParkInfo, 22, 4)
         if args.openNavi:
           if n>=2:
             time.sleep(0.5)
