@@ -312,7 +312,7 @@ if __name__=="__main__":
                       transport_time = transport_time[pos+1:len(transport_time)-1]
                     print(f'{StrUtil.ljust_jp(aMountainName,12)} {StrUtil.ljust_jp(_detailParkInfo['登山口'],18)} {StrUtil.ljust_jp(transport_time,6)} {StrUtil.ljust_jp(route_time,10)} {_detailParkInfo['駐車台数']}')
           else:
-            if args.noDetail:
+            if args.noDetails:
               print(f'{aMountainName} {aGeo[0]} {aGeo[1]} {duration_minutes} {directions_link}')
             else:
               print(aMountainName)
