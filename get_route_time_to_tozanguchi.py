@@ -1,4 +1,4 @@
-#   Copyright 2024 hidenorly
+#   Copyright 2024, 2025 hidenorly
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -234,9 +234,15 @@ if __name__=="__main__":
   mountains = set( args.args )
   mountains = MountainFilterUtil.mountainsIncludeExcludeFromFile( mountains, args.exclude, args.include )
 
+  # search by mountain name (convert to dic's key(mountain name))
+  for aMountain in list(set( args.args )):
+    keys = TozanguchiUtil.getMountainKeys(aMountain)
+    for aMountainKey in keys:
+      mountains.add( aMountainKey )
+
   # search by tozanguchi (and convert to mountain name)
   filter_tozanguchi = set()
-  for tozanguchi in list(set( args.args )):
+  for tozanguchi in list(set(args.args)):
     for mountainname,tozanguchis in tozanguchiDic.items():
       if tozanguchi in tozanguchis:
         mountains.add(mountainname)
