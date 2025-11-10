@@ -178,7 +178,7 @@ class CachedRouteUtil:
     tag = self.get_timezone_tag()
     cacheData = self.cache.restoreFromCache(lat1, lon1, lat2, lon2, tag)
 
-    if cacheData and not self.forceReload:
+    if (cacheData and cacheData["duration_minutes"]!=0) and not self.forceReload:
       duration_minutes = cacheData["duration_minutes"]
       directions_link = cacheData["directions_link"]
     else:
@@ -186,6 +186,8 @@ class CachedRouteUtil:
         self.driver = WebUtil.get_web_driver()
 
       duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(self.driver, lat1, lon1, lat2, lon2)
+      if duration_minutes == 0:
+        exit(-1)
       _data = {
         "duration_minutes": duration_minutes,
         "directions_link": directions_link,
