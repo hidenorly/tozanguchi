@@ -185,9 +185,16 @@ class CachedRouteUtil:
       if not self.driver:
         self.driver = WebUtil.get_web_driver()
 
-      duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(self.driver, lat1, lon1, lat2, lon2)
-      if duration_minutes == 0:
-        exit(-1)
+      retry_cnt = 0
+      while retry_cnt<10:
+        duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(self.driver, lat1, lon1, lat2, lon2)
+        if duration_minutes != 0:
+          break
+        retry_cnt += 1
+        print("retry:"+str(retry_cnt))
+        time.sleep(6)
+        if retry_cnt == 10:
+          exit(-1)
       _data = {
         "duration_minutes": duration_minutes,
         "directions_link": directions_link,
