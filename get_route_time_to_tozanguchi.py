@@ -172,7 +172,7 @@ class CachedRouteUtil:
 
     return result
 
-  def get_directions_duration_minutes(self, lat1, lon1, lat2, lon2):
+  def get_directions_duration_minutes(self, lat1, lon1, lat2, lon2, retry_max_duration):
     duration_minutes = None
     directions_link = None
     tag = self.get_timezone_tag()
@@ -186,14 +186,18 @@ class CachedRouteUtil:
         self.driver = WebUtil.get_web_driver()
 
       retry_cnt = 0
+      retry_max_count = 1
+      retry_duration = 6
+      if retry_max_duration>=0:
+        retry_max_count = retry_max_duration / retry_duration
       while retry_cnt<10:
         duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(self.driver, lat1, lon1, lat2, lon2)
         if duration_minutes != 0:
           break
         retry_cnt += 1
         print("retry:"+str(retry_cnt))
-        time.sleep(6)
-        if retry_cnt == 10:
+        time.sleep(retry_duration)
+        if retry_cnt == retry_max_count:
           exit(-1)
       _data = {
         "duration_minutes": duration_minutes,
@@ -237,6 +241,7 @@ if __name__=="__main__":
   parser.add_argument('-o', '--openNavi', action='store_true', default=False, help='specify if you want to open the route navi')
   parser.add_argument('-g', '--openPark', action='store_true', default=False, help='specify if you want to open the park info.')
   parser.add_argument('-c', '--compare', action='store_true', default=False, help='compare tozanguchi per climbtime')
+  parser.add_argument('-z', '--retry', action='store', type=int, default=180, help='retry max duration sec')
 
   args = parser.parse_args()
 
@@ -305,7 +310,7 @@ if __name__=="__main__":
   n = 0
   for aMountainName, tozanguchiParkGeos in tozanguchiParkInfos.items():
     for aGeo in tozanguchiParkGeos:
-      duration_minutes, directions_link = cachedRouteUtil.get_directions_duration_minutes(latitude, longitude, aGeo[0], aGeo[1])
+      duration_minutes, directions_link = cachedRouteUtil.get_directions_duration_minutes(latitude, longitude, aGeo[0], aGeo[1], args.retry)
       if (maxRouteTimeMinutes==0 or duration_minutes>=minRouteTimeMinutes) and (maxRouteTimeMinutes==0 or duration_minutes<=maxRouteTimeMinutes):
         n = n + 1
         conditionedMountains.add(aMountainName)
