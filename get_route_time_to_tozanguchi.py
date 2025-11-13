@@ -185,20 +185,20 @@ class CachedRouteUtil:
       if not self.driver:
         self.driver = WebUtil.get_web_driver()
 
-      retry_cnt = 0
-      retry_max_count = 1
       retry_duration = 6
+      retry_max_count = 1
       if retry_max_duration>=0:
-        retry_max_count = retry_max_duration / retry_duration
-      while retry_cnt<10:
+        retry_max_count = int(retry_max_duration / retry_duration)
+      retry_cnt = 0
+      while retry_cnt<retry_max_count:
         duration_minutes, directions_link = RouteUtil.get_directions_duration_minutes(self.driver, lat1, lon1, lat2, lon2)
         if duration_minutes != 0:
           break
         retry_cnt += 1
-        print("retry:"+str(retry_cnt))
+        print("retry:"+str(retry_cnt), file=sys.stderr)
         time.sleep(retry_duration)
-        if retry_cnt == retry_max_count:
-          exit(-1)
+      if duration_minutes == 0:
+        return None, None
       _data = {
         "duration_minutes": duration_minutes,
         "directions_link": directions_link,
@@ -311,6 +311,8 @@ if __name__=="__main__":
   for aMountainName, tozanguchiParkGeos in tozanguchiParkInfos.items():
     for aGeo in tozanguchiParkGeos:
       duration_minutes, directions_link = cachedRouteUtil.get_directions_duration_minutes(latitude, longitude, aGeo[0], aGeo[1], args.retry)
+      if duration_minutes == None and directions_link == None:
+        continue
       if (maxRouteTimeMinutes==0 or duration_minutes>=minRouteTimeMinutes) and (maxRouteTimeMinutes==0 or duration_minutes<=maxRouteTimeMinutes):
         n = n + 1
         conditionedMountains.add(aMountainName)
